@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard — TenaNet CTF</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+* {margin:0;padding:0;box-sizing:border-box;}
+:root {
+    --bg-dark:#0a0214;
+    --accent1:#8d4af5;
+    --accent2:#c084fc;
+    --text:#e9d5ff;
+    --muted:#a78bfa;
+    --success:#6ee7b7;
+    --error:#f87171;
+    --card-bg:rgba(255,255,255,0.05);
+}
+body{
+    font-family:'Poppins',sans-serif;
+    background:var(--bg-dark);
+    color:var(--text);
+    overflow-x:hidden;
+    min-height: 100vh;
+}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;}
+
+/* Header and Layout */
+header{width:100%;max-width:1200px;margin:20px auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+header h1{font-size:2em;color:white;text-shadow:0 0 8px rgba(192,132,252,0.5);}
+header button{
+    background:linear-gradient(90deg,var(--accent1),var(--accent2));
+    color:white;
+    border:none;
+    padding:10px 20px;
+    border-radius:12px;
+    cursor:pointer;
+    transition:0.2s;
+    font-weight:700;
+}
+header button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(141,74,245,0.5);}
+
+.user-info{
+    margin: 30px auto;
+    text-align:center;
+    padding: 0 20px;
+    max-width: 1200px;
+}
+.user-info h2{color:var(--accent2);}
+.user-info p{color:var(--muted);}
+
+.dashboard{
+    max-width:1200px;
+    margin:0 auto 40px;
+    padding:20px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:25px;
+}
+.card{
+    background:var(--card-bg);
+    padding:25px;
+    border-radius:20px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.5);
+    transition:0.3s;
+    cursor:pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 12px 35px rgba(141,74,245,0.5);
+    border-color: var(--accent2);
+}
+.card h2{color:white;margin-bottom:10px;font-weight:700;}
+.card p{color:var(--muted);font-size:0.9em;}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.5em;
+    }
+    header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .user-info {
+        margin-top: 20px;
+    }
+}
+
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+
+<header>
+<h1>TenaNet CTF Dashboard</h1>
+<button id="logoutBtn">Logout</button>
+</header>
+
+<div class="user-info">
+<h2 id="username">Loading...</h2>
+<p>Total Points: <span id="points">0</span></p>
+</div>
+
+<div class="dashboard">
+<div class="card" onclick="location.href='challenges.html'">
+<h2>Challenges</h2>
+<p>View all available challenges and submit flags.</p>
+</div>
+<div class="card" onclick="alert('Leaderboard is coming soon!');">
+<h2>Leaderboard</h2>
+<p>See top users and your rank.</p>
+</div>
+<div class="card" onclick="alert('Profile is coming soon!');">
+<h2>Profile</h2>
+<p>View and edit your profile details.</p>
+</div>
+<div class="card" onclick="alert('Stats are coming soon!');">
+<h2>Stats</h2>
+<p>View your challenge history and achievements.</p>
+</div>
+</div>
+<script>
+// --- DISABLE RIGHT CLICK ---
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.keyCode === 123){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.keyCode === 85){
+        e.preventDefault();
+        alert("Viewing source is disabled.");
+    }
+});
+
+// --- DETECT DEVTOOLS OPENING (basic check) ---
+let devtoolsOpen = false;
+setInterval(function() {
+    const threshold = 160;
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (widthThreshold || heightThreshold) {
+        if(!devtoolsOpen){
+            devtoolsOpen = true;
+            alert("Developer tools detected!");
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
+</script>
+
+<script>
+// --- GLOBAL CONFIGURATION ---
+const LOGIN_PAGE = 'login.html';
+const TOKEN_KEY = 'userToken'; // Must match the key used in login.html
+
+// --- AUTH CHECK ---
+const token = localStorage.getItem(TOKEN_KEY);
+if (!token) {
+    window.location.href = LOGIN_PAGE;
+}
+
+// --- MOCK USER DATA FETCH ---
+// Since the external API fetch will fail, we use mock data to populate the UI.
+function mockFetchUserInfo(token) {
+    return new Promise((resolve) => {
+        // Simple token validation logic (based on login.html's token value)
+        if (token === 'tn-session-1337-valid') {
+            resolve({
+                username: 'hawigemechis1@TenaNet.ctf',
+                points: 1150 // Sum of all points from challenges.html: 100+150+200+300+400+500 = 1650. Let's start lower.
+            });
+        } else {
+            // Handle invalid/missing token case (although main auth check handles redirect)
+            resolve({ username: 'Guest', points: 0 });
+        }
+    });
+}
+
+// --- INITIAL LOAD ---
+mockFetchUserInfo(token)
+.then(user => {
+    document.getElementById('username').textContent = user.username;
+    document.getElementById('points').textContent = user.points;
+})
+.catch(() => {
+    // Fallback if the promise somehow rejects (not expected with mock)
+    document.getElementById('username').textContent = 'Error Loading User';
+});
+
+// --- LOGOUT ---
+document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem(TOKEN_KEY);
+    alert('Logged out successfully.'); // Using alert for simplicity, as it's not in an active game/app context
+    window.location.href = LOGIN_PAGE;
+});
+
+
+// --- MATRIX BACKGROUND ANIMATION ---
+var canvas=document.getElementById('matrix-canvas'),ctx=canvas.getContext('2d');
+var W=window.innerWidth,H=window.innerHeight;canvas.width=W;canvas.height=H;
+var fontSize=16,columns=Math.floor(W/fontSize),drops=[];for(var i=0;i<columns;i++){drops[i]=0;}
+var str="CTF 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*-+=|";
+
+function draw(){
+    ctx.fillStyle="rgba(0,0,0,0.05)";
+    ctx.fillRect(0,0,W,H);
+    ctx.font="700 "+fontSize+"px monospace";
+    
+    // Use the accent color for the matrix to match the UI
+    ctx.fillStyle="var(--accent2)"; 
+
+    for(var i=0;i<columns;i++){
+        var index=Math.floor(Math.random()*str.length),
+            x=i*fontSize,
+            y=drops[i]*fontSize;
+        
+        ctx.fillText(str[index],x,y);
+        
+        if(y>=H&&Math.random()>0.99) drops[i]=0;
+        drops[i]++;
+    }
+}
+
+window.addEventListener('resize',() => {
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+    columns=Math.floor(W/fontSize);
+    drops.length=columns;
+    // Reset drop positions on resize for smooth transition
+    for(let i=0;i<columns;i++){drops[i]=0;}
+});
+
+setInterval(draw,35);
+</script>
+</body>
+</html>

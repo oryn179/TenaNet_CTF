@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chat</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+      height: 100vh;
+      background: linear-gradient(135deg, #6a00f4, #a800ff, #cb00ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      color: white;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .container {
+      text-align: center;
+      z-index: 1;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(255,255,255,0.6);
+    }
+
+    .btn {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      text-decoration: none;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 1.2em;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 0 20px rgba(255,255,255,0.2);
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+      box-shadow: 0 0 30px rgba(255,255,255,0.4);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+  <div class="container">
+    <h1>Welcome to Chat</h1>
+    <a href="https://t.me/Oryn179" target="_blank" class="btn">Chat on Telegram 💬</a>
+  </div>
+<script>
+// --- DISABLE RIGHT CLICK ---
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.keyCode === 123){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.keyCode === 85){
+        e.preventDefault();
+        alert("Viewing source is disabled.");
+    }
+});
+
+// --- DETECT DEVTOOLS OPENING (basic check) ---
+let devtoolsOpen = false;
+setInterval(function() {
+    const threshold = 160;
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (widthThreshold || heightThreshold) {
+        if(!devtoolsOpen){
+            devtoolsOpen = true;
+            alert("Developer tools detected!");
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
+</script>
+
+  <script>
+    const canvas = document.getElementById("particles");
+    const ctx = canvas.getContext("2d");
+
+    let particlesArray;
+    const numberOfParticles = 100;
+
+    function init() {
+      canvas.width = innerWidth;
+      canvas.height = innerHeight;
+      particlesArray = [];
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push(new Particle());
+      }
+    }
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 1 - 0.5;
+        this.speedY = Math.random() * 1 - 0.5;
+        this.color = "rgba(255,255,255,0.8)";
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < particlesArray.length; i++) {
+        particlesArray[i].update();
+        particlesArray[i].draw();
+      }
+      connectParticles();
+      requestAnimationFrame(animate);
+    }
+
+    function connectParticles() {
+      for (let a = 0; a < particlesArray.length; a++) {
+        for (let b = a; b < particlesArray.length; b++) {
+          const dx = particlesArray[a].x - particlesArray[b].x;
+          const dy = particlesArray[a].y - particlesArray[b].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance < 100) {
+            ctx.strokeStyle = "rgba(255,255,255," + (1 - distance / 100) + ")";
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+            ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    window.addEventListener("resize", init);
+    init();
+    animate();
+  </script>
+</body>
+</html>

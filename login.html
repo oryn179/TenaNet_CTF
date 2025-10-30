@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TenaNet Access Point</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+        --bg-dark:#001;
+        --bg-mid:#0a0214;
+        --accent1:#8d4af5;
+        --accent2:#c084fc;
+        --text:#e9d5ff;
+        --muted:#a78bfa;
+        --error:#f87171;
+        --success:#6ee7b7;
+        --glass:rgba(255,255,255,0.03);
+    }
+    html,body{
+        height:100%;
+        font-family:'Poppins', system-ui, sans-serif;
+        background:var(--bg-dark);
+        color:var(--text);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        overflow:hidden;
+        position:relative;
+    }
+    #matrix-canvas{
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:#111; 
+        z-index:-3; 
+    }
+    .container{
+        position:relative;
+        width:100%;
+        max-width:420px;
+        padding:24px;
+        z-index:10;
+    }
+    .login-card{
+        background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01));
+        backdrop-filter:blur(12px);
+        border:1px solid rgba(255,255,255,0.08);
+        border-radius:18px;
+        box-shadow:0 10px 40px rgba(0,0,0,0.8),0 0 40px rgba(192,132,252,0.16) inset;
+        padding:36px;
+        width:100%;
+        margin:0 auto;
+        text-align:center;
+        animation:cardIn 0.5s ease forwards;
+    }
+    .brand{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:18px;}
+    .logo{
+        width:48px;height:48px;
+        border-radius:10px;
+        background:linear-gradient(135deg,var(--accent1),var(--accent2));
+        display:flex;align-items:center;justify-content:center;
+        font-weight:700;color:white;font-family:monospace;font-size:18px;
+        box-shadow:0 8px 30px rgba(141,74,245,0.24);
+    }
+    .title{font-size:20px;font-weight:700;color:white;}
+    .subtitle{font-size:13px;color:var(--muted);margin-top:4px;}
+    .input-group{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+    label{display:flex;flex-direction:column;align-items:flex-start;font-size:13px;color:var(--muted);}
+    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;}
+    input:focus{outline:none;border-color:var(--accent1);box-shadow:0 0 10px rgba(141,74,245,0.2);}
+    .actions{display:flex;gap:12px;margin-top:18px;}
+    .btn-primary{
+        width:100%;
+        padding:12px 14px;
+        border-radius:12px;
+        border:none;
+        background:linear-gradient(90deg,var(--accent1),var(--accent2));
+        color:white;
+        font-weight:600;
+        cursor:pointer;
+        box-shadow:0 8px 30px rgba(141,74,245,0.2);
+        transition:all 0.2s ease;
+    }
+    .btn-primary:hover{opacity: 0.9;}
+    .back-btn{
+        margin-top:12px;
+        width:100%;
+        padding:12px 14px;
+        border-radius:12px;
+        border:none;
+        background:rgba(255,255,255,0.05);
+        color:var(--muted);
+        font-weight:500;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        transition:all 0.3s ease;
+    }
+    .back-btn:hover{
+        background:rgba(255,255,255,0.1);
+        color:var(--text);
+    }
+    .back-btn i{
+        font-size:18px;
+    }
+    .message{height:22px;margin-top:12px;font-size:14px;font-weight:600;}
+    @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="container">
+<div class="login-card" role="region" aria-label="Authentication card">
+<div class="brand">
+<div class="logo">CTF</div>
+<div>
+<div class="title">TenaNet</div>
+<div class="subtitle">Enter credentials to access the secure dashboard.</div>
+</div>
+</div>
+
+<form id="authForm" autocomplete="off">
+<div class="input-group" id="loginForm">
+<label>Email<input id="email" name="email" type="email" placeholder="user@TenaNet.ctf" required/></label>
+<label>Password<input id="password" name="password" type="password" placeholder="password" required/></label>
+</div>
+
+<div class="actions">
+<button type="submit" class="btn-primary" id="submitBtn">Login to CTF</button>
+</div>
+
+<!-- Fixed back button -->
+<button type="button" class="back-btn" onclick="location.href='CHAT.html'">
+    <i class='bx bx-arrow-back'></i> Back to Chat
+</button>
+
+<div class="message" id="message" role="status" aria-live="polite"></div>
+
+<p style="margin-top: 15px; font-size: 13px; color: var(--muted);">
+    All Passwords MockPassword123! <br>
+    To reset your Email, send a message to <a href="https://t.me/Oryn179" target="_blank" style="color:var(--accent2);text-decoration:none;">@Oryn179</a> on Telegram.
+</p>
+<form id="authForm" autocomplete="off">
+  <div class="actions">
+    <a href="/oauth/google.js" class="btn-primary" style="background:#23292E">
+      <i class='bx bxl-google'></i> Login with Google
+    </a>
+  </div>
+
+  <div class="actions" style="margin-top:10px;">
+    <a href="/oauth/github.js" class="btn-primary" style="background:#24292E">
+      <i class='bx bxl-github'></i> Login with GitHub
+    </a>
+  </div>
+
+  <button type="button" class="back-btn" onclick="location.href='CHAT.html'">
+      <i class='bx bx-arrow-back'></i> Back to Chat
+  </button>
+</form>
+</form>
+</div>
+</div>
+<script>
+// --- DISABLE RIGHT CLICK ---
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.keyCode === 123){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.keyCode === 85){
+        e.preventDefault();
+        alert("Viewing source is disabled.");
+    }
+});
+
+// --- DETECT DEVTOOLS OPENING (basic check) ---
+let devtoolsOpen = false;
+setInterval(function() {
+    const threshold = 160;
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (widthThreshold || heightThreshold) {
+        if(!devtoolsOpen){
+            devtoolsOpen = true;
+            alert("Developer tools detected!");
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
+</script>
+
+<script>
+    const VALID_CREDENTIALS = [
+        { email: 'hawigemechis1@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'mikey@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'mrmishaal@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'fun@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'new@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'libentadeledg@gmail.com', password: 'MockPassword123!' },
+        { email: 'natitekle81@gmail.com', password: 'MockPassword123!' },
+        { email: 'samuelbelay81@gmail.com', password: 'MockPassword123!' },
+        { email: 'eidsirajudin33@gmail.com', password: 'MockPassword123!' },
+        { email: 'boezjr5@gmail.com', password: 'MockPassword123!' },
+        { email: 'bemnetdawitgebru5@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'beimnetaytenew@gmail.com', password: 'MockPassword123!' },
+        { email: 'matyasabreham6@gmail.com', password: 'MockPassword123!' },
+        { email: '69843157@gmail.com', password: 'MockPassword123!' },
+        { email: 'sakura@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'yaficofi@gmail.com', password: 'MockPassword123!' },
+        { email: 'Noname@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'sofoniasfikadu1@Tena.ctf', password: 'MockPassword123!' },
+        { email: 'yosef@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'h@x0r@tenanet.ctf', password: 'MockPassword123!' },
+        { email: 'oliyadte5@gmail.com', password: 'MockPassword123!' },
+        { email: 'naol.chala11@gmail.com', password: 'MockPassword123!' },
+        { email: 'samikorean321@gmail.com', password: 'MockPassword123!' },
+        { email: 'doipvop@gmail.com', password: 'MockPassword123!' },
+        { email: 'sudo_p3x@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'baraki8812@gmail.com', password: 'MockPassword123!' },
+        { email: 'ana@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'Neseadem211@gmail.com', password: 'MockPassword123!' },
+        { email: 'Juweyriyafedlu38@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'seidsirajudin33@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'kidusyitayal816@gmail.com', password: 'MockPassword123!' },
+        { email: 'ababrehamaddisdaba@gmail.com', password: 'MockPassword123!' },
+        { email: 'mrleadthehacker888@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'haileabhm7@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'arial@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'sebrinamohammed44@gmail.com', password: 'MockPassword123!' },
+        { email: 'aesthetic4086@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'nahooman00@TenaNet.ctf', password: 'MockPassword123!' },
+        { email: 'coderoot@gmail.com', password: 'MockPassword123!' },
+        { email: '7h3D0c@TenaNet.ctf', password: 'MockPassword123!' },
+        
+    ];
+
+
+    document.getElementById('authForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value.toLowerCase();
+        const password = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
+        
+        const valid = VALID_CREDENTIALS.some(user => 
+            user.email === email && user.password === password
+        );
+
+        if (valid) {
+            localStorage.setItem('userToken', 'tn-session-1337-valid'); 
+            messageDiv.textContent = '✅ ACCESS GRANTED. Redirecting to Dashboard...';
+            messageDiv.style.color = 'var(--success)';
+            setTimeout(() => window.location.href = 'challenges.html', 1000);
+        } else {
+            messageDiv.textContent = '❌ Authentication failed. Invalid email or password.';
+            messageDiv.style.color = 'var(--error)';
+            setTimeout(() => messageDiv.textContent = '', 5000);
+        }
+    });
+
+    // --- Matrix Animation ---
+    const canvas = document.getElementById('matrix-canvas');
+    const ctx = canvas.getContext('2d');
+    let w = canvas.width = window.innerWidth;
+    let h = canvas.height = window.innerHeight;
+    const cols = Math.floor(w / 20) + 1;
+    const ypos = Array(cols).fill(0);
+    const chars = '日ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍｦｲｸｺｿﾁﾄﾉﾌﾔﾖﾙﾚﾛﾝ';
+
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fillRect(0, 0, w, h);
+        ctx.font = '20px monospace';
+        for (let i = 0; i < cols; i++) {
+            const text = chars[Math.floor(Math.random() * chars.length)];
+            const x = i * 20;
+            const y = ypos[i];
+            ctx.fillStyle = (i % 7 === 0)
+                ? 'rgba(100, 255, 100, 0.7)'
+                : 'rgba(192, 132, 252, 0.9)';
+            ctx.fillText(text, x, y);
+            ypos[i] = y > 100 + Math.random() * 10000 ? 0 : y + 20;
+        }
+    }
+    setInterval(drawMatrix, 50);
+
+    window.addEventListener('resize', () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+    });
+</script>
+<!-- Spotify Music Embed (Funk Playlist) -->
+<div id="spotify-player">
+  <iframe 
+    src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWY64wDtewQt" 
+    width="300" 
+    height="80" 
+    frameborder="0" 
+    allowtransparency="true" 
+    allow="encrypted-media">
+  </iframe>
+</div>
+</body>
+</html>

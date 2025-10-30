@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard — TenaNet CTF</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg-dark:#0a0214;
+  --accent1:#8d4af5;
+  --accent2:#c084fc;
+  --text:#e9d5ff;
+  --muted:#a78bfa;
+  --success:#6ee7b7;
+}
+body{
+  font-family:'Poppins',sans-serif;
+  background:var(--bg-dark);
+  color:var(--text);
+  overflow-x:hidden;
+  min-height:100vh;
+  text-align:center;
+}
+header{
+  padding:20px;
+  text-align:center;
+}
+header h1{
+  color:white;
+  text-shadow:0 0 10px rgba(192,132,252,0.8);
+}
+table{
+  width:90%;
+  max-width:900px;
+  margin:30px auto;
+  border-collapse:collapse;
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+}
+th,td{
+  padding:15px;
+  text-align:center;
+}
+th{
+  background:linear-gradient(90deg,var(--accent1),var(--accent2));
+  color:white;
+  font-weight:700;
+}
+tr:nth-child(even){
+  background:rgba(255,255,255,0.03);
+}
+tr:hover{
+  background:rgba(192,132,252,0.1);
+}
+.back-btn{
+  background:none;
+  color:var(--muted);
+  border:1px solid var(--muted);
+  padding:8px 15px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:all 0.3s ease;
+  font-weight:600;
+}
+.back-btn:hover{
+  color:var(--text);
+  border-color:var(--accent2);
+  box-shadow:0 0 15px rgba(192,132,252,0.5);
+}
+</style>
+</head>
+<body>
+<header>
+  <h1><i class='bx bx-trophy'></i> TenaNet CTF Leaderboard</h1>
+  <button class="back-btn" onclick="location.href='challenges.html'"><i class='bx bx-arrow-back'></i> Back to Challenges</button>
+</header>
+
+<table id="leaderboardTable">
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Player</th>
+      <th>Score</th>
+      <th>Last Update</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<script>
+// --- DISABLE RIGHT CLICK ---
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.keyCode === 123){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.keyCode === 85){
+        e.preventDefault();
+        alert("Viewing source is disabled.");
+    }
+});
+
+// --- DETECT DEVTOOLS OPENING (basic check) ---
+let devtoolsOpen = false;
+setInterval(function() {
+    const threshold = 160;
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (widthThreshold || heightThreshold) {
+        if(!devtoolsOpen){
+            devtoolsOpen = true;
+            alert("Developer tools detected!");
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
+</script>
+
+<script>
+function renderLeaderboard(){
+  const tbody=document.querySelector('#leaderboardTable tbody');
+  const data=JSON.parse(localStorage.getItem("leaderboardData")||"[]");
+  data.sort((a,b)=>b.score-a.score);
+  tbody.innerHTML='';
+  data.forEach((player,i)=>{
+    const row=document.createElement('tr');
+    row.innerHTML=`
+      <td>#${i+1}</td>
+      <td>${player.email}</td>
+      <td>${player.score}</td>
+      <td>${player.last||'—'}</td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+renderLeaderboard();
+</script>
+<!-- Spotify Music Embed (Funk Playlist) -->
+<div id="spotify-player">
+  <iframe 
+    src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWY64wDtewQt" 
+    width="300" 
+    height="80" 
+    frameborder="0" 
+    allowtransparency="true" 
+    allow="encrypted-media">
+  </iframe>
+</div>
+</body>
+</html>
+

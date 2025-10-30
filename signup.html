@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CTF Signup — TenaNet</title>
+<style>
+* {margin:0;padding:0;box-sizing:border-box;}
+:root {
+--bg-dark:#0a0214;
+--accent1:#8d4af5;
+--accent2:#c084fc;
+--text:#e9d5ff;
+--muted:#a78bfa;
+--error:#f87171;
+--success:#6ee7b7;
+}
+body{height:100%;font-family:'Poppins',system-ui,sans-serif;background:var(--bg-dark);color:var(--text);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+#matrix-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;}
+.signup-container{background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.1);border-radius:25px;padding:50px 60px;max-width:420px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.7);text-align:center;animation:fadeIn 0.8s ease forwards;}
+.signup-container h1{font-size:2.5em;color:white;margin-bottom:25px;text-shadow:0 0 8px rgba(192,132,252,0.5);}
+.signup-container p{color:var(--muted);margin-bottom:25px;}
+.input-group{margin-bottom:20px;text-align:left;}
+.input-group label{display:block;margin-bottom:6px;color:var(--accent2);}
+.input-group input{width:100%;padding:12px 15px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.3);color:white;font-size:1em;}
+.input-group input:focus{outline:none;border-color:var(--accent1);box-shadow:0 0 10px rgba(141,74,245,0.3);}
+.btn-signup,.btn-oauth{width:100%;padding:15px;border:none;border-radius:12px;font-weight:700;font-size:1em;cursor:pointer;margin-bottom:15px;transition:transform 0.2s,box-shadow 0.2s;}
+.btn-signup{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;box-shadow:0 8px 25px rgba(141,74,245,0.3);}
+.btn-signup:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(141,74,245,0.5);}
+.btn-oauth{background:rgba(255,255,255,0.05);color:var(--accent2);display:flex;align-items:center;justify-content:center;gap:10px;border:2px solid var(--accent1);}
+.btn-oauth:hover{background:rgba(141,74,245,0.1);transform:translateY(-2px);}
+.error-msg{color:var(--error);margin-bottom:15px;font-size:0.95em;}
+.success-msg{color:var(--success);margin-bottom:15px;font-size:0.95em;}
+.login-text{color:var(--muted);margin-top:15px;font-size:0.9em;}
+.login-text a{color:var(--accent2);text-decoration:none;}
+.login-text a:hover{text-decoration:underline;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+<canvas id="matrix-canvas"></canvas>
+
+<div class="signup-container">
+    <h1>Create Account</h1>
+    <p>Sign up to start your CTF journey.</p>
+    <div class="error-msg" id="errorMsg"></div>
+    <div class="success-msg" id="successMsg"></div>
+    <div class="input-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="you@example.com"/>
+    </div>
+    <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="********"/>
+    </div>
+    <div class="input-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <input type="password" id="confirmPassword" placeholder="********"/>
+    </div>
+    <button class="btn-signup" id="signupBtn">Sign Up</button>
+    <button class="btn-oauth" id="githubBtn">Sign up with GitHub</button>
+    <button class="btn-oauth" id="googleBtn">Sign up with Google</button>
+    <p class="login-text">Already have an account? <a href="/login.html">Login</a></p>
+</div>
+<script>
+// --- DISABLE RIGHT CLICK ---
+document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    alert("Right-click is disabled on this page.");
+});
+
+// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+document.addEventListener('keydown', function(e){
+    // F12
+    if(e.keyCode === 123){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+I
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+C
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+Shift+J
+    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
+        e.preventDefault();
+        alert("Opening developer tools is disabled.");
+    }
+    // Ctrl+U (View Source)
+    if(e.ctrlKey && e.keyCode === 85){
+        e.preventDefault();
+        alert("Viewing source is disabled.");
+    }
+});
+
+// --- DETECT DEVTOOLS OPENING (basic check) ---
+let devtoolsOpen = false;
+setInterval(function() {
+    const threshold = 160;
+    const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+    const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+    if (widthThreshold || heightThreshold) {
+        if(!devtoolsOpen){
+            devtoolsOpen = true;
+            alert("Developer tools detected!");
+        }
+    } else {
+        devtoolsOpen = false;
+    }
+}, 1000);
+</script>
+
+<script>
+// MATRIX ANIMATION
+var canvas=document.getElementById('matrix-canvas'),ctx=canvas.getContext('2d');
+var W=window.innerWidth,H=window.innerHeight;canvas.width=W;canvas.height=H;
+var fontSize=16,columns=Math.floor(W/fontSize),drops=[];for(var i=0;i<columns;i++){drops[i]=0;}
+var str="CTF 0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$%^&*-+=|";
+function draw(){ctx.fillStyle="rgba(0,0,0,0.05)";ctx.fillRect(0,0,W,H);ctx.font="700 "+fontSize+"px monospace";ctx.fillStyle="var(--accent2)";for(var i=0;i<columns;i++){var index=Math.floor(Math.random()*str.length),x=i*fontSize,y=drops[i]*fontSize;ctx.fillText(str[index],x,y);if(y>=H&&Math.random()>0.99)drops[i]=0;drops[i]++;}}
+window.addEventListener('resize',()=>{W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;columns=Math.floor(W/fontSize);drops.length=columns;for(let i=0;i<columns;i++){if(typeof drops[i]==='undefined'){drops[i]=1;}}});
+setInterval(draw,35);
+
+// REDIRECT IF LOGGED IN
+if(localStorage.getItem('tenanet_token')){window.location.href='/home.html';}
+
+// SIGNUP FUNCTION
+document.getElementById('signupBtn').addEventListener('click',()=>{
+    const email=document.getElementById('email').value.trim();
+    const password=document.getElementById('password').value.trim();
+    const confirmPassword=document.getElementById('confirmPassword').value.trim();
+    const errorMsg=document.getElementById('errorMsg');
+    const successMsg=document.getElementById('successMsg');
+    errorMsg.textContent=''; successMsg.textContent='';
+
+    if(!email||!password||!confirmPassword){errorMsg.textContent='Please fill in all fields.';return;}
+    if(password!==confirmPassword){errorMsg.textContent='Passwords do not match.';return;}
+
+    fetch('http://localhost:4000/api/signup',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password})
+    }).then(res=>res.json()).then(data=>{
+        if(data.token){localStorage.setItem('tenanet_token',data.token);window.location.href='/home.html';}
+        else{errorMsg.textContent=data.error||'Signup failed.';}
+    }).catch(()=>{errorMsg.textContent='Server error.';});
+});
+
+// OAUTH BUTTONS
+document.getElementById('githubBtn').addEventListener('click',()=>{window.location.href='http://localhost:4000/auth/github';});
+document.getElementById('googleBtn').addEventListener('click',()=>{window.location.href='http://localhost:4000/auth/google';});
+</script>
+</body>
+</html>
