@@ -136,43 +136,29 @@ header h1{font-size:2.2em;color:white;text-shadow:0 0 10px rgba(192,132,252,0.8)
   <div class="filter-container" id="category-filters"></div>
 </div>
 <div class="challenge-grid" id="challenge-list"></div>
+
 <script>
-// --- DISABLE RIGHT CLICK ---
+// --- GLOBAL SECURITY MEASURES (Replaced alert() with console.warn()) ---
 document.addEventListener('contextmenu', function(e){
     e.preventDefault();
-    alert("Right-click is disabled on this page.");
+    console.warn("Security policy violation: Right-click disabled.");
 });
 
-// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
 document.addEventListener('keydown', function(e){
-    // F12
-    if(e.keyCode === 123){
+    const disabledKeys = [
+        123, // F12
+        // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J
+        ...(e.ctrlKey && e.shiftKey ? [73, 67, 74] : []), 
+        // Ctrl+U (View Source)
+        ...(e.ctrlKey ? [85] : [])
+    ];
+
+    if (disabledKeys.includes(e.keyCode)) {
         e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+I
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+C
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+J
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+U (View Source)
-    if(e.ctrlKey && e.keyCode === 85){
-        e.preventDefault();
-        alert("Viewing source is disabled.");
+        console.warn("Security policy violation: Developer tools access prevented.");
     }
 });
 
-// --- DETECT DEVTOOLS OPENING (basic check) ---
 let devtoolsOpen = false;
 setInterval(function() {
     const threshold = 160;
@@ -181,7 +167,7 @@ setInterval(function() {
     if (widthThreshold || heightThreshold) {
         if(!devtoolsOpen){
             devtoolsOpen = true;
-            alert("Developer tools detected!");
+            console.warn("Security policy violation: Developer tools detected!");
         }
     } else {
         devtoolsOpen = false;
@@ -196,6 +182,7 @@ let activeFilter = 'All';
 let loggedInEmail = localStorage.getItem("currentUser") || "anonymous@tenanet.ctf";
 
 // --- CHALLENGES WITH GOOGLE DRIVE LINKS ---
+// The 'flag' property remains for submission logic, but is not displayed to the user.
 const challenges = [
     { 
         id: 1, 
@@ -258,16 +245,20 @@ function submitFlag(challengeId, flagInput){
   const challenge = challenges.find(c=>c.id===challengeId);
   if(!challenge) return showMessage("Error","Challenge not found.",false);
   if(challenge.status==="solved") return showMessage("Already Solved","You already solved this.",true);
+  
   if(enteredFlag===challenge.flag.toUpperCase()){
     challenge.status="solved";
     mockUserPoints+=challenge.points;
     updatePointsDisplay();
+    
+    // Update Leaderboard Data
     if(localStorage.getItem("leaderboardData")){
       let data=JSON.parse(localStorage.getItem("leaderboardData"));
       let p=data.find(d=>d.email.toLowerCase()===loggedInEmail.toLowerCase());
       if(p){p.score+=challenge.points;p.last=new Date().toLocaleTimeString();}
       localStorage.setItem("leaderboardData",JSON.stringify(data));
     }
+    
     showMessage("Flag Accepted!",`You earned ${challenge.points} points!`,true);
     renderChallenges(activeFilter);
   } else {
@@ -278,7 +269,7 @@ function submitFlag(challengeId, flagInput){
 function showMessage(title,message,isSuccess=false){
   const modal=document.getElementById('custom-message-modal');
   modal.innerHTML=`
-  <div class="modal-content" style="border-color:${isSuccess?'var(--success)':'var(--accent2)'}">
+  <div class="modal-content" style="border-color:${isSuccess?'var(--success)':'var(--accent2)'}; box-shadow:0 10px 50px ${isSuccess?'rgba(110,231,183,0.5)':'rgba(141,74,245,0.8)'}">
     <h3 id="modal-title">${title}</h3>
     <div id="modal-message">${message}</div>
     <button class="modal-button" onclick="document.getElementById('custom-message-modal').style.display='none'">Close</button>
@@ -298,7 +289,14 @@ function renderChallenges(filter){
       <p>${ch.description}</p>
       <div class="card-footer"><span class="category-tag">${ch.category}</span></div>`;
     card.onclick=()=>{
-      if(ch.status==='solved')showMessage(ch.name,`You already solved this!<br>Flag: <code>${ch.flag}</code>`,true);
+      // Hiding the flag for solved challenges:
+      if(ch.status==='solved'){
+          showMessage(
+              ch.name,
+              `You already solved this! The flag is now redacted to maintain challenge integrity.`,
+              true
+          );
+      }
       else{
         const modal=document.getElementById('custom-message-modal');
         modal.innerHTML=`
@@ -307,7 +305,7 @@ function renderChallenges(filter){
             <div id="modal-message">
               <p>${ch.description}</p>
               <input type="text" id="flag-input" placeholder="Enter Flag (TNCTF{...})" 
-              style="width:100%;margin-top:10px;padding:10px;border-radius:8px;text-align:center;text-transform:uppercase;">
+              style="width:100%;margin-top:10px;padding:10px;border-radius:8px;text-align:center;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid var(--accent1);">
             </div>
             <div style="display:flex;gap:10px;justify-content:center;">
               <button class="modal-button" onclick="submitFlag(${ch.id},document.getElementById('flag-input'))">Submit</button>
@@ -332,7 +330,17 @@ function renderFilters(){
   });
 }
 
-function init(){renderFilters();renderChallenges('All');updatePointsDisplay();}
+function init(){
+    renderFilters();
+    renderChallenges('All');
+    updatePointsDisplay();
+    // New "Cheating Not Allowed" warning on page load
+    showMessage(
+        "ACCESS WARNING",
+        "<p style='color:var(--error); font-weight:700;'>Cheating Not Allowed</p><p>All challenge attempts and client-side actions are monitored and logged. Enjoy the challenge responsibly.</p>",
+        false // Not success, uses default warning style
+    );
+}
 init();
 
 // MATRIX BACKGROUND
@@ -383,7 +391,7 @@ resizeParticlesCanvas();animateParticles();
 window.addEventListener('resize',resizeParticlesCanvas);
 </script>
 <!-- Spotify Music Embed (Funk Playlist) -->
-<div id="spotify-player">
+<div id="spotify-player" style="position:fixed; bottom:10px; right:10px; z-index:50; opacity:0.7; transition:opacity 0.3s;">
   <iframe 
     src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWY64wDtewQt" 
     width="300" 
@@ -395,3 +403,4 @@ window.addEventListener('resize',resizeParticlesCanvas);
 </div>
 </body>
 </html>
+
