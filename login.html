@@ -6,11 +6,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>TenaNet Access Point</title>
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
     
     *{margin:0;padding:0;box-sizing:border-box;}
     :root{
-        --bg-dark:#001;
+        --bg-dark:#050014; /* Slightly darker to make neon pop */
         --bg-mid:#0a0214;
         --accent1:#8d4af5;
         --accent2:#c084fc;
@@ -24,6 +24,8 @@
         height:100%;
         font-family:'Poppins', system-ui, sans-serif;
         background:var(--bg-dark);
+        /* Subtle radial gradient to give depth */
+        background-image: radial-gradient(circle at 50% 10%, #1a012e, var(--bg-dark));
         color:var(--text);
         display:flex;
         align-items:center;
@@ -37,7 +39,7 @@
         left:0;
         width:100%;
         height:100%;
-        background:#111; 
+        background:transparent; /* Matrix canvas is now overlaying the gradient */
         z-index:-3; 
     }
     .container{
@@ -52,7 +54,8 @@
         backdrop-filter:blur(12px);
         border:1px solid rgba(255,255,255,0.08);
         border-radius:18px;
-        box-shadow:0 10px 40px rgba(0,0,0,0.8),0 0 40px rgba(192,132,252,0.16) inset;
+        /* Sharper shadow with inner glow */
+        box-shadow:0 10px 50px rgba(0,0,0,0.9),0 0 25px rgba(192,132,252,0.3) inset;
         padding:36px;
         width:100%;
         margin:0 auto;
@@ -65,29 +68,57 @@
         border-radius:10px;
         background:linear-gradient(135deg,var(--accent1),var(--accent2));
         display:flex;align-items:center;justify-content:center;
-        font-weight:700;color:white;font-family:monospace;font-size:18px;
-        box-shadow:0 8px 30px rgba(141,74,245,0.24);
+        font-weight:800;color:white;font-family:monospace;font-size:20px;
+        box-shadow:0 0 15px var(--accent2);
     }
-    .title{font-size:20px;font-weight:700;color:white;}
-    .subtitle{font-size:13px;color:var(--muted);margin-top:4px;}
-    .input-group{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+    .title{font-size:24px;font-weight:800;color:white;text-shadow:0 0 10px var(--accent2);}
+    .subtitle{font-size:14px;color:var(--muted);margin-top:4px;}
+    .input-group{display:flex;flex-direction:column;gap:12px;margin-top:20px;}
     label{display:flex;flex-direction:column;align-items:flex-start;font-size:13px;color:var(--muted);}
-    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;}
-    input:focus{outline:none;border-color:var(--accent1);box-shadow:0 0 10px rgba(141,74,245,0.2);}
-    .actions{display:flex;gap:12px;margin-top:18px;}
+    input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);font-size:15px;transition:all 0.3s ease;}
+    input:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 15px rgba(192,132,252,0.5);}
+    
+    .actions{display:flex;gap:12px;margin-top:18px;flex-direction:column;}
+
+    /* Primary Button with Neon Pulse */
     .btn-primary{
         width:100%;
-        padding:12px 14px;
+        padding:14px 14px;
         border-radius:12px;
         border:none;
         background:linear-gradient(90deg,var(--accent1),var(--accent2));
         color:white;
-        font-weight:600;
+        font-weight:700;
         cursor:pointer;
-        box-shadow:0 8px 30px rgba(141,74,245,0.2);
+        box-shadow:0 0 20px rgba(141,74,245,0.5); /* Initial glow */
         transition:all 0.2s ease;
+        animation: neon-pulse 1.5s infinite alternate ease-in-out;
     }
-    .btn-primary:hover{opacity: 0.9;}
+    .btn-primary:hover{opacity: 0.9; transform: translateY(-1px);}
+
+    /* Secondary/Social Buttons */
+    .btn-secondary{
+        width:100%;
+        padding:12px 14px;
+        border-radius:12px;
+        border:1px solid rgba(255,255,255,0.1);
+        background:rgba(255,255,255,0.05);
+        color:var(--muted);
+        font-weight:500;
+        cursor:pointer;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        text-decoration:none;
+        transition:all 0.3s ease;
+    }
+    .btn-secondary:hover{
+        border-color:var(--success);
+        color:var(--success);
+        box-shadow:0 0 15px rgba(110,231,183,0.3);
+    }
+
     .back-btn{
         margin-top:12px;
         width:100%;
@@ -107,12 +138,40 @@
     .back-btn:hover{
         background:rgba(255,255,255,0.1);
         color:var(--text);
+        box-shadow:0 0 10px rgba(167,139,250,0.2);
     }
     .back-btn i{
         font-size:18px;
     }
     .message{height:22px;margin-top:12px;font-size:14px;font-weight:600;}
+    
     @keyframes cardIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    
+    /* Neon Pulse Animation for Primary Button */
+    @keyframes neon-pulse {
+        0% {box-shadow: 0 0 5px var(--accent2), 0 0 10px var(--accent1);}
+        100% {box-shadow: 0 0 15px var(--accent2), 0 0 30px var(--accent1);}
+    }
+
+    /* Spotify Player Styling */
+    #spotify-player {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        z-index: 50;
+        opacity: 0.7; /* Make it subtle */
+        transition: opacity 0.3s;
+    }
+    #spotify-player:hover {
+        opacity: 1; /* Bring it back on hover */
+    }
+
+    @media (max-width: 500px) {
+        .login-card{padding:24px;}
+        .title{font-size:20px;}
+        .subtitle{font-size:12px;}
+        #spotify-player{display:none;} /* Hide on very small screens */
+    }
 </style>
 </head>
 <body>
@@ -123,8 +182,8 @@
 <div class="brand">
 <div class="logo">CTF</div>
 <div>
-<div class="title">TenaNet</div>
-<div class="subtitle">Enter credentials to access the secure dashboard.</div>
+<div class="title">TenaNet Secure Access</div>
+<div class="subtitle">Enter credentials to access the command dashboard.</div>
 </div>
 </div>
 
@@ -134,78 +193,64 @@
 <label>Password<input id="password" name="password" type="password" placeholder="password" required/></label>
 </div>
 
-<div class="actions">
-<button type="submit" class="btn-primary" id="submitBtn">Login to CTF</button>
-</div>
-
-<!-- Fixed back button -->
-<button type="button" class="back-btn" onclick="location.href='CHAT.html'">
-    <i class='bx bx-arrow-back'></i> Back to Chat
-</button>
-
 <div class="message" id="message" role="status" aria-live="polite"></div>
 
-<p style="margin-top: 15px; font-size: 13px; color: var(--muted);">
-    All Passwords MockPassword123! <br>
-    To reset your Email, send a message to <a href="https://t.me/Oryn179" target="_blank" style="color:var(--accent2);text-decoration:none;">@Oryn179</a> on Telegram.
+<div class="actions">
+<button type="submit" class="btn-primary" id="submitBtn">
+    <i class='bx bx-log-in'></i> Login to CTF
+</button>
+</div>
+</form> 
+
+<!-- External/Social Login Links -->
+<div class="actions" style="margin-top:10px;">
+    <a href="/oauth/google.js" class="btn-secondary">
+      <i class='bx bxl-google'></i> Sign In with Google
+    </a>
+    <a href="/oauth/github.js" class="btn-secondary">
+      <i class='bx bxl-github'></i> Sign In with GitHub
+    </a>
+</div>
+
+<button type="button" class="back-btn" onclick="location.href='CHAT.html'">
+    <i class='bx bx-arrow-back'></i> Back to Chat Interface
+</button>
+
+<p style="margin-top: 15px; font-size: 12px; color: var(--muted); line-height: 1.5;">
+    <span style="color:var(--success); font-weight: 700;">Note:</span> All internal accounts use **MockPassword123!**
+    <br>For password or account resets, contact <a href="https://t.me/Oryn179" target="_blank" style="color:var(--accent2);text-decoration:none;">@Oryn179</a> on Telegram.
 </p>
-<form id="authForm" autocomplete="off">
-  <div class="actions">
-    <a href="/oauth/google.js" class="btn-primary" style="background:#23292E">
-      <i class='bx bxl-google'></i> Login with Google
-    </a>
-  </div>
 
-  <div class="actions" style="margin-top:10px;">
-    <a href="/oauth/github.js" class="btn-primary" style="background:#24292E">
-      <i class='bx bxl-github'></i> Login with GitHub
-    </a>
-  </div>
-
-  <button type="button" class="back-btn" onclick="location.href='CHAT.html'">
-      <i class='bx bx-arrow-back'></i> Back to Chat
-  </button>
-</form>
-</form>
 </div>
 </div>
+
 <script>
-// --- DISABLE RIGHT CLICK ---
+// --- GLOBAL SECURITY MEASURES ---
+
+// Disable Right Click (Context Menu)
 document.addEventListener('contextmenu', function(e){
     e.preventDefault();
-    alert("Right-click is disabled on this page.");
+    // Do NOT use alert() as per instructions. Using console log instead for mock security message.
+    console.log("Security Alert: Right-click is disabled.");
 });
 
-// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+// Disable Common Dev Tools Shortcuts
 document.addEventListener('keydown', function(e){
-    // F12
-    if(e.keyCode === 123){
+    const disabledKeys = [
+        123, // F12
+        // Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+Shift+J
+        ...(e.ctrlKey && e.shiftKey ? [73, 67, 74] : []), 
+        // Ctrl+U (View Source)
+        ...(e.ctrlKey ? [85] : [])
+    ];
+
+    if (disabledKeys.includes(e.keyCode)) {
         e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+I
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+C
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+J
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+U (View Source)
-    if(e.ctrlKey && e.keyCode === 85){
-        e.preventDefault();
-        alert("Viewing source is disabled.");
+        console.log("Security Alert: Developer tools access prevented.");
     }
 });
 
-// --- DETECT DEVTOOLS OPENING (basic check) ---
+// Basic DevTools Opening Detection (using window size threshold)
 let devtoolsOpen = false;
 setInterval(function() {
     const threshold = 160;
@@ -214,7 +259,7 @@ setInterval(function() {
     if (widthThreshold || heightThreshold) {
         if(!devtoolsOpen){
             devtoolsOpen = true;
-            alert("Developer tools detected!");
+            console.log("Security Alert: Developer tools detected!");
         }
     } else {
         devtoolsOpen = false;
@@ -223,7 +268,9 @@ setInterval(function() {
 </script>
 
 <script>
+    // --- MOCK AUTHENTICATION LOGIC ---
     const VALID_CREDENTIALS = [
+        // Keeping your extensive list of mock users
         { email: 'hawigemechis1@tenanet.ctf', password: 'MockPassword123!' },
         { email: 'mikey@tenanet.ctf', password: 'MockPassword123!' },
         { email: 'mrmishaal@tenanet.ctf', password: 'MockPassword123!' },
@@ -264,7 +311,6 @@ setInterval(function() {
         { email: 'nahooman00@TenaNet.ctf', password: 'MockPassword123!' },
         { email: 'coderoot@gmail.com', password: 'MockPassword123!' },
         { email: '7h3D0c@TenaNet.ctf', password: 'MockPassword123!' },
-        
     ];
 
 
@@ -274,12 +320,16 @@ setInterval(function() {
         const password = document.getElementById('password').value;
         const messageDiv = document.getElementById('message');
         
-        const valid = VALID_CREDENTIALS.some(user => 
+        // Find the user entry to get the team name for localStorage
+        const userEntry = VALID_CREDENTIALS.find(user => 
             user.email === email && user.password === password
         );
 
-        if (valid) {
+        if (userEntry) {
+            // Set the current user email in localStorage for use in other pages (like Leaderboard)
+            localStorage.setItem("currentUser", userEntry.email); 
             localStorage.setItem('userToken', 'tn-session-1337-valid'); 
+            
             messageDiv.textContent = '✅ ACCESS GRANTED. Redirecting to Dashboard...';
             messageDiv.style.color = 'var(--success)';
             setTimeout(() => window.location.href = 'challenges.html', 1000);
@@ -297,30 +347,42 @@ setInterval(function() {
     let h = canvas.height = window.innerHeight;
     const cols = Math.floor(w / 20) + 1;
     const ypos = Array(cols).fill(0);
-    const chars = '日ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍｦｲｸｺｿﾁﾄﾉﾌﾔﾖﾙﾚﾛﾝ';
+    // Added more CTF/Hacker focused characters
+    const chars = '0123456789ABCDEFHACKERCTF_FLAG'; 
 
     function drawMatrix() {
-        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fillStyle = 'rgba(5,0,20,0.05)'; // Slightly different clear color
         ctx.fillRect(0, 0, w, h);
-        ctx.font = '20px monospace';
+        ctx.font = '700 20px monospace';
         for (let i = 0; i < cols; i++) {
             const text = chars[Math.floor(Math.random() * chars.length)];
             const x = i * 20;
-            const y = ypos[i];
-            ctx.fillStyle = (i % 7 === 0)
-                ? 'rgba(100, 255, 100, 0.7)'
-                : 'rgba(192, 132, 252, 0.9)';
+            let y = ypos[i];
+            
+            // Neon color shift based on column
+            ctx.fillStyle = (i % 5 === 0)
+                ? 'rgba(110, 231, 183, 0.9)' // Success/Green
+                : 'rgba(192, 132, 252, 0.9)'; // Accent/Purple
+            
             ctx.fillText(text, x, y);
-            ypos[i] = y > 100 + Math.random() * 10000 ? 0 : y + 20;
+            
+            // Randomly reset column
+            ypos[i] = y > h && Math.random() > 0.97 ? 0 : y + 20;
         }
     }
-    setInterval(drawMatrix, 50);
+    
+    // Set interval for matrix animation
+    const matrixInterval = 50;
+    const drawMatrixInterval = setInterval(drawMatrix, matrixInterval);
 
     window.addEventListener('resize', () => {
         w = canvas.width = window.innerWidth;
         h = canvas.height = window.innerHeight;
+        // Re-initialize ypos array on resize
+        ypos.fill(0); 
     });
 </script>
+
 <!-- Spotify Music Embed (Funk Playlist) -->
 <div id="spotify-player">
   <iframe 
