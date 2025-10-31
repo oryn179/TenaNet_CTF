@@ -15,6 +15,11 @@
   --text:#e9d5ff;
   --muted:#a78bfa;
   --success:#6ee7b7;
+  --error:#f87171;
+  --card-bg:rgba(255,255,255,0.02);
+  --rank1:#ffd700; /* Gold */
+  --rank2:#c0c0c0; /* Silver */
+  --rank3:#cd7f32; /* Bronze */
 }
 body{
   font-family:'Poppins',sans-serif;
@@ -22,158 +27,450 @@ body{
   color:var(--text);
   overflow-x:hidden;
   min-height:100vh;
-  text-align:center;
+  position:relative;
+}
+#matrix-canvas,#particles-canvas{
+  position:fixed;top:0;left:0;width:100%;height:100%;z-index:-3;
 }
 header{
-  padding:20px;
-  text-align:center;
+  width:100%;max-width:1200px;margin:20px auto;padding:0 20px;
+  display:flex;justify-content:space-between;align-items:center;
 }
-header h1{
-  color:white;
+header h1{font-size:2.2em;color:white;text-shadow:0 0 10px rgba(192,132,252,0.8);}
+
+/* Glitch Effect on Title */
+.glitch-text{
+  font-size:2.5em;
+  font-weight:800;
+  text-transform:uppercase;
+  position:relative;
+  color:var(--text);
+  text-shadow:
+    0 0 7px var(--accent2),
+    0 0 10px var(--accent2),
+    0 0 20px var(--accent2);
+}
+.glitch-text::before, .glitch-text::after{
+  content:attr(data-text);
+  position:absolute;
+  top:0;left:0;
+  width:100%;
+  height:100%;
+}
+.glitch-text::before{
+  left:2px;
+  text-shadow:-2px 0 var(--rank1);
+  clip:rect(24px, 350px, 34px, 0);
+  animation:glitch-anim-1 2s infinite linear alternate-reverse;
+}
+.glitch-text::after{
+  left:-2px;
+  text-shadow:-2px 0 var(--rank3);
+  clip:rect(85px, 350px, 95px, 0);
+  animation:glitch-anim-2 3s infinite linear alternate-reverse;
+}
+@keyframes glitch-anim-1 {
+  0% { clip: rect(40px, 9999px, 60px, 0); }
+  10% { clip: rect(70px, 9999px, 90px, 0); }
+  20% { clip: rect(10px, 9999px, 30px, 0); }
+  30% { clip: rect(60px, 9999px, 80px, 0); }
+  40% { clip: rect(30px, 9999px, 50px, 0); }
+  50% { clip: rect(80px, 9999px, 100px, 0); }
+  60% { clip: rect(5px, 9999px, 25px, 0); }
+  70% { clip: rect(90px, 9999px, 110px, 0); }
+  80% { clip: rect(20px, 9999px, 40px, 0); }
+  90% { clip: rect(50px, 9999px, 70px, 0); }
+  100% { clip: rect(85px, 9999px, 105px, 0); }
+}
+@keyframes glitch-anim-2 {
+  0% { clip: rect(75px, 9999px, 95px, 0); }
+  15% { clip: rect(15px, 9999px, 35px, 0); }
+  30% { clip: rect(85px, 9999px, 105px, 0); }
+  45% { clip: rect(5px, 9999px, 25px, 0); }
+  60% { clip: rect(50px, 9999px, 70px, 0); }
+  75% { clip: rect(35px, 9999px, 55px, 0); }
+  90% { clip: rect(100px, 9999px, 120px, 0); }
+  100% { clip: rect(25px, 9999px, 45px, 0); }
+}
+
+.back-btn{
+  background:none;color:var(--muted);
+  border:1px solid var(--muted);
+  padding:8px 15px;border-radius:12px;
+  cursor:pointer;transition:all 0.3s ease;font-weight:600;
+}
+.back-btn:hover{color:var(--text);border-color:var(--accent2);box-shadow:0 0 15px rgba(192,132,252,0.5);}
+
+/* --- LEADERBOARD STYLES --- */
+.leaderboard-container{
+  max-width:1000px;margin:50px auto;padding:0 20px;
+  display:flex;flex-direction:column;gap:30px;
+}
+h2{
+  text-align:center;
+  font-size:2.5em;
+  color:var(--accent2);
   text-shadow:0 0 10px rgba(192,132,252,0.8);
+  margin-bottom:20px;
 }
-table{
-  width:90%;
-  max-width:900px;
-  margin:30px auto;
-  border-collapse:collapse;
-  background:rgba(255,255,255,0.05);
-  border-radius:12px;
-  overflow:hidden;
-  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+.leaderboard-table{
+  width:100%;
+  border-collapse:separate; /* Changed to separate for border-radius on rows */
+  border-spacing:0 5px; /* Adds space between rows */
+  
 }
-th,td{
+.leaderboard-table th, .leaderboard-table td{
   padding:15px;
-  text-align:center;
+  text-align:left;
 }
-th{
+.leaderboard-table th{
   background:linear-gradient(90deg,var(--accent1),var(--accent2));
   color:white;
   font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  box-shadow:0 5px 15px rgba(141,74,245,0.4);
 }
-tr:nth-child(even){
-  background:rgba(255,255,255,0.03);
-}
-tr:hover{
-  background:rgba(192,132,252,0.1);
-}
-.back-btn{
-  background:none;
-  color:var(--muted);
-  border:1px solid var(--muted);
-  padding:8px 15px;
-  border-radius:12px;
-  cursor:pointer;
-  transition:all 0.3s ease;
+.leaderboard-table tr.data-row td{
+  background:linear-gradient(145deg,rgba(255,255,255,0.05),rgba(255,255,255,0.01));
+  border-top:1px solid rgba(255,255,255,0.1);
   font-weight:600;
+  transition:all 0.3s ease;
+  box-shadow:0 2px 10px rgba(0,0,0,0.3);
 }
-.back-btn:hover{
-  color:var(--text);
-  border-color:var(--accent2);
-  box-shadow:0 0 15px rgba(192,132,252,0.5);
+.leaderboard-table tr.data-row:hover td{
+  background:linear-gradient(145deg,rgba(141,74,245,0.15),rgba(141,74,245,0.05));
+  transform:scale(1.005);
+}
+
+/* Rounded corners for the table data rows */
+.leaderboard-table tr.data-row td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px;}
+.leaderboard-table tr.data-row td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px;}
+.leaderboard-table th:first-child{border-top-left-radius:10px;}
+.leaderboard-table th:last-child{border-top-right-radius:10px;}
+
+
+/* Dynamic Rank Styling */
+.rank-score{
+  font-weight:800;
+  font-size:1.1em;
+  text-shadow:0 0 10px var(--accent2);
+}
+.rank-1 .rank-score{color:var(--rank1);text-shadow:0 0 15px var(--rank1), 0 0 20px rgba(255,215,0,0.5);}
+.rank-2 .rank-score{color:var(--rank2);text-shadow:0 0 10px var(--rank2);}
+.rank-3 .rank-score{color:var(--rank3);text-shadow:0 0 7px var(--rank3);}
+.rank-trophy{margin-right:8px;}
+
+/* Highlight the current user's row */
+.current-user-row td{
+  background-color: rgba(110,231,183,0.15) !important;
+  border-left: 5px solid var(--success);
+}
+.current-user-row:hover td{
+  background-color: rgba(110,231,183,0.25) !important;
+}
+.current-user-row .rank-score {
+  color: var(--success) !important;
+  text-shadow: 0 0 10px var(--success), 0 0 15px rgba(110,231,183,0.4);
+}
+
+/* --- PODIUM STYLES --- */
+.podium-container{
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+    gap:20px;
+    margin-bottom:50px;
+}
+.podium-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+    color:var(--text);
+    text-align:center;
+    padding:10px;
+    border-radius:10px 10px 0 0;
+    font-weight:700;
+    width:150px;
+    box-shadow:0 0 20px rgba(0,0,0,0.8);
+    transition:transform 0.3s ease;
+}
+.podium-box:hover{
+    transform:translateY(-5px);
+}
+.podium-rank-icon{
+    font-size:3em;
+    margin-bottom:5px;
+}
+.podium-score{
+    font-size:1.5em;
+    font-weight:900;
+    margin-top:5px;
+}
+
+/* Rank 1 */
+.rank-1-box{
+    height:180px;
+    background:linear-gradient(to top, rgba(255,215,0,0.2), rgba(255,215,0,0.5));
+    border:3px solid var(--rank1);
+    box-shadow:0 0 30px var(--rank1);
+    order:2; /* Place in the middle */
+}
+.rank-1-box .podium-rank-icon{color:var(--rank1);text-shadow:0 0 15px var(--rank1);}
+.rank-1-box .podium-score{color:var(--rank1);}
+
+/* Rank 2 */
+.rank-2-box{
+    height:140px;
+    background:linear-gradient(to top, rgba(192,192,192,0.2), rgba(192,192,192,0.4));
+    border:3px solid var(--rank2);
+    box-shadow:0 0 20px var(--rank2);
+    order:1; /* Place to the left */
+}
+.rank-2-box .podium-rank-icon{color:var(--rank2);text-shadow:0 0 10px var(--rank2);}
+.rank-2-box .podium-score{color:var(--rank2);}
+
+/* Rank 3 */
+.rank-3-box{
+    height:100px;
+    background:linear-gradient(to top, rgba(205,127,50,0.2), rgba(205,127,50,0.3));
+    border:3px solid var(--rank3);
+    box-shadow:0 0 15px var(--rank3);
+    order:3; /* Place to the right */
+}
+.rank-3-box .podium-rank-icon{color:var(--rank3);text-shadow:0 0 7px var(--rank3);}
+.rank-3-box .podium-score{color:var(--rank3);}
+
+
+@media (max-width:768px){
+  .podium-box{width:100px;}
+  .rank-1-box{height:150px;}
+  .rank-2-box{height:120px;}
+  .rank-3-box{height:80px;}
+  .glitch-text{font-size:2em;}
+  .leaderboard-table th, .leaderboard-table td{padding:10px 8px;font-size:0.9em;}
+}
+@media (max-width:500px){
+    header{flex-direction:column;gap:15px;}
+    .podium-container{gap:10px;}
+    .podium-box{width:80px;padding:5px;}
+    .podium-rank-icon{font-size:2em;}
+    .podium-score{font-size:1.2em;}
+    .glitch-text{font-size:1.5em;margin-top:10px;}
 }
 </style>
 </head>
 <body>
+
+<canvas id="matrix-canvas"></canvas>
+<canvas id="particles-canvas"></canvas>
+
 <header>
-  <h1><i class='bx bx-trophy'></i> TenaNet CTF Leaderboard</h1>
-  <button class="back-btn" onclick="location.href='challenges.html'"><i class='bx bx-arrow-back'></i> Back to Challenges</button>
+  
+  <div class="glitch-text" data-text="TenaNet CTF Leaderboard">TenaNet CTF Leaderboard</div>
+  
+  <div style="display:flex;gap:15px;align-items:center;">
+    <button class="back-btn" onclick="location.href='index.html'"><i class='bx bx-arrow-back'></i> Dashboard</button>
+    <button class="back-btn" onclick="location.href='login.html'"><i class='bx bx-check-square'></i> Challenges</button>
+  </div>
 </header>
 
-<table id="leaderboardTable">
-  <thead>
-    <tr>
-      <th>Rank</th>
-      <th>Player</th>
-      <th>Score</th>
-      <th>Last Update</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+<div class="leaderboard-container">
+  
+  <h2><i class='bx bx-star' style="color:var(--rank1);"></i> Top Tier</h2>
+  
+  <div class="podium-container" id="podium-display">
+    </div>
+
+  <table class="leaderboard-table" id="leaderboard-table-body">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Team/User</th>
+        <th>Score</th>
+        <th>Last Flag</th>
+      </tr>
+    </thead>
+    <tbody>
+      </tbody>
+  </table>
+</div>
+
+
 <script>
-// --- DISABLE RIGHT CLICK ---
-document.addEventListener('contextmenu', function(e){
-    e.preventDefault();
-    alert("Right-click is disabled on this page.");
-});
-
-// --- DISABLE COMMON DEV TOOLS SHORTCUTS ---
+// --- DISABLE RIGHT CLICK & DEVTOOLS (Copying from challenges page) ---
+document.addEventListener('contextmenu', function(e){e.preventDefault();alert("Right-click is disabled on this page.");});
 document.addEventListener('keydown', function(e){
-    // F12
-    if(e.keyCode === 123){
+    if(e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85)){
         e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+I
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 73){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+C
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 67){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+Shift+J
-    if(e.ctrlKey && e.shiftKey && e.keyCode === 74){
-        e.preventDefault();
-        alert("Opening developer tools is disabled.");
-    }
-    // Ctrl+U (View Source)
-    if(e.ctrlKey && e.keyCode === 85){
-        e.preventDefault();
-        alert("Viewing source is disabled.");
+        alert("Developer tools or source viewing is disabled.");
     }
 });
-
-// --- DETECT DEVTOOLS OPENING (basic check) ---
 let devtoolsOpen = false;
 setInterval(function() {
     const threshold = 160;
     const widthThreshold = window.outerWidth - window.innerWidth > threshold;
     const heightThreshold = window.outerHeight - window.innerHeight > threshold;
     if (widthThreshold || heightThreshold) {
-        if(!devtoolsOpen){
-            devtoolsOpen = true;
-            alert("Developer tools detected!");
-        }
-    } else {
-        devtoolsOpen = false;
-    }
+        if(!devtoolsOpen){devtoolsOpen = true;alert("Developer tools detected!");}
+    } else {devtoolsOpen = false;}
 }, 1000);
-</script>
 
-<script>
-function renderLeaderboard(){
-  const tbody=document.querySelector('#leaderboardTable tbody');
-  const data=JSON.parse(localStorage.getItem("leaderboardData")||"[]");
-  data.sort((a,b)=>b.score-a.score);
-  tbody.innerHTML='';
-  data.forEach((player,i)=>{
-    const row=document.createElement('tr');
-    row.innerHTML=`
-      <td>#${i+1}</td>
-      <td>${player.email}</td>
-      <td>${player.score}</td>
-      <td>${player.last||'—'}</td>
-    `;
-    tbody.appendChild(row);
-  });
+// --- LEADERBOARD LOGIC ---
+const leaderboardTableBody = document.querySelector('#leaderboard-table-body tbody');
+const podiumDisplay = document.getElementById('podium-display');
+const loggedInEmail = localStorage.getItem("currentUser") || "anonymous@tenanet.ctf";
+
+// Mock data initialization (Same as before)
+function getOrCreateLeaderboardData() {
+    let data = JSON.parse(localStorage.getItem("leaderboardData"));
+    if (!data) {
+        data = [
+            { team: "CyberSleuths", email: "team1@ctf.com", score: 4500, last: "21:45:01" },
+            { team: "The_A_Team", email: "ateam@ctf.com", score: 6000, last: "22:15:30" },
+            { team: "FlagFinders", email: "finders@ctf.com", score: 3500, last: "20:55:12" },
+            { team: "RogueOne", email: "rogue@ctf.com", score: 2500, last: "19:02:44" },
+        ];
+        if (!data.find(d => d.email.toLowerCase() === loggedInEmail.toLowerCase())) {
+            const defaultTeamName = loggedInEmail.split('@')[0].toUpperCase(); 
+            data.push({ team: defaultTeamName, email: loggedInEmail, score: 0, last: "--" });
+        }
+        localStorage.setItem("leaderboardData", JSON.stringify(data));
+        return data;
+    }
+    return data;
 }
+
+function renderPodium(data) {
+    podiumDisplay.innerHTML = '';
+    const top3 = data.slice(0, 3);
+    
+    // Check if we have at least 3 players to show a proper podium
+    if (top3.length < 3) {
+        podiumDisplay.innerHTML = '<p style="color:var(--muted); font-style:italic;">Need at least 3 players to show the podium.</p>';
+        return;
+    }
+
+    // Build the podium boxes dynamically
+    top3.forEach((player, index) => {
+        const rank = index + 1;
+        const box = document.createElement('div');
+        box.classList.add('podium-box', `rank-${rank}-box`);
+        
+        let rankIcon;
+        if (rank === 1) rankIcon = '<i class="bx bxs-crown"></i>';
+        else if (rank === 2) rankIcon = '<i class="bx bxs-medal"></i>';
+        else if (rank === 3) rankIcon = '<i class="bx bxs-star-half"></i>';
+
+        box.innerHTML = `
+            <div class="podium-rank-icon">${rankIcon}</div>
+            <div class="podium-team">${player.team}</div>
+            <div class="podium-score">${player.score}</div>
+        `;
+        podiumDisplay.appendChild(box);
+    });
+}
+
+function renderLeaderboard() {
+    // 1. Get data and sort it by score (descending)
+    let leaderboardData = getOrCreateLeaderboardData();
+    leaderboardData.sort((a, b) => b.score - a.score);
+
+    leaderboardTableBody.innerHTML = ''; // Clear existing rows
+    
+    // Render the Top 3 podium
+    renderPodium(leaderboardData);
+
+    // 2. Render table rows (Starting from rank 1)
+    leaderboardData.forEach((player, index) => {
+        const rank = index + 1;
+        const row = leaderboardTableBody.insertRow();
+        row.classList.add('data-row'); // Apply table styling class
+
+        const isCurrentUser = player.email.toLowerCase() === loggedInEmail.toLowerCase();
+        
+        if (isCurrentUser) {
+            row.classList.add('current-user-row');
+        }
+        
+        // --- Rank Cell ---
+        const rankCell = row.insertCell();
+        let rankContent = rank;
+        if (rank === 1) rankContent = `<i class='bx bxs-trophy rank-trophy' style='color:var(--rank1);'></i>${rank}`;
+        else if (rank === 2) rankContent = `<i class='bx bxs-trophy rank-trophy' style='color:var(--rank2);'></i>${rank}`;
+        else if (rank === 3) rankContent = `<i class='bx bxs-trophy rank-trophy' style='color:var(--rank3);'></i>${rank}`;
+        rankCell.innerHTML = rankContent;
+        rankCell.classList.add(`rank-${rank}`); // Add class for styling
+
+        // --- Team/User Cell ---
+        const teamCell = row.insertCell();
+        teamCell.textContent = player.team;
+        if (isCurrentUser) {
+            teamCell.innerHTML += ' <span style="color:var(--success);font-size:0.8em;font-weight:700;">(YOU)</span>';
+        }
+
+        // --- Score Cell ---
+        const scoreCell = row.insertCell();
+        scoreCell.textContent = player.score;
+        scoreCell.classList.add('rank-score');
+        
+        // --- Last Flag Cell ---
+        const lastFlagCell = row.insertCell();
+        lastFlagCell.textContent = player.last;
+    });
+}
+
+// Initialize the leaderboard
 renderLeaderboard();
+
+
+// --- MATRIX BACKGROUND (Copying from challenges page) ---
+const m_canvas=document.getElementById('matrix-canvas');
+const m_ctx=m_canvas.getContext('2d');
+let m_W=m_canvas.width=window.innerWidth;
+let m_H=m_canvas.height=window.innerHeight;
+const m_cols=Math.floor(m_W/16)+1;
+const m_ypos=Array(m_cols).fill(0);
+function drawMatrix(){
+  m_ctx.fillStyle='rgba(10,2,20,0.05)';
+  m_ctx.fillRect(0,0,m_W,m_H);
+  m_ctx.fillStyle='rgba(192,132,252,0.8)';
+  m_ctx.font='700 16px monospace';
+  for(let i=0;i<m_cols;i++){
+    const text="TENANETCTF0123456789"[Math.floor(Math.random()*20)];
+    const x=i*16,y=m_ypos[i]*16;
+    m_ctx.fillText(text,x,y);
+    if(y>m_H&&Math.random()>0.975)m_ypos[i]=0;
+    m_ypos[i]++;
+  }
+}
+setInterval(drawMatrix,40);
+window.addEventListener('resize',()=>{m_W=m_canvas.width=window.innerWidth;m_H=m_canvas.height=window.innerHeight;});
+
+// --- PARTICLES BACKGROUND (Copying from challenges page) ---
+const p_canvas=document.getElementById('particles-canvas');
+const p_ctx=p_canvas.getContext('2d');
+let p_W,p_H;let particles=[];
+const particleCount=60;
+function resizeParticlesCanvas(){
+  p_W=p_canvas.width=window.innerWidth;
+  p_H=p_canvas.height=window.innerHeight;
+  particles=[];
+  for(let i=0;i<particleCount;i++)particles.push(new Particle());
+}
+class Particle{
+  constructor(){this.x=Math.random()*p_W;this.y=Math.random()*p_H;this.size=Math.random()*3+1;this.speedX=Math.random()*2-1;this.speedY=Math.random()*2-1;}
+  update(){this.x+=this.speedX;this.y+=this.speedY;if(this.x>p_W)this.x=0;if(this.x<0)this.x=p_W;if(this.y>p_H)this.y=0;if(this.y<0)this.y=p_H;}
+  draw(){p_ctx.fillStyle='rgba(200,100,255,0.5)';p_ctx.beginPath();p_ctx.arc(this.x,this.y,this.size,0,Math.PI*2);p_ctx.fill();}
+}
+function animateParticles(){
+  p_ctx.clearRect(0,0,p_W,p_H);
+  particles.forEach(p=>{p.update();p.draw();});
+  requestAnimationFrame(animateParticles);
+}
+resizeParticlesCanvas();animateParticles();
+window.addEventListener('resize',resizeParticlesCanvas);
 </script>
-<!-- Spotify Music Embed (Funk Playlist) -->
-<div id="spotify-player">
-  <iframe 
-    src="https://open.spotify.com/embed/playlist/37i9dQZF1DWWY64wDtewQt" 
-    width="300" 
-    height="80" 
-    frameborder="0" 
-    allowtransparency="true" 
-    allow="encrypted-media">
-  </iframe>
-</div>
 </body>
 </html>
-
