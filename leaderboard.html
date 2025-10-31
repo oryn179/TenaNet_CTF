@@ -9,7 +9,7 @@
     <style>
         /* --- Font Setup --- */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-        
+                
         :root {
             --fuchsia-main: #db2777; /* fuchsia-600 */
             --violet-main: #8b5cf6; /* violet-500 */
@@ -26,6 +26,7 @@
             overflow: hidden;
             z-index: 1;
         }
+
         .particle-bg::before {
             content: '';
             position: absolute;
@@ -40,6 +41,7 @@
             pointer-events: none;
             z-index: -1;
         }
+
         @keyframes moveParticles {
             0% { transform: translate(0, 0); }
             100% { transform: translate(-100px, -100px); }
@@ -50,18 +52,21 @@
             0%, 100% { box-shadow: 0 0 5px var(--violet-main), 0 0 10px var(--violet-main), 0 0 20px var(--violet-main); }
             50% { box-shadow: 0 0 7px #7c3aed, 0 0 14px #7c3aed, 0 0 28px #7c3aed; }
         }
+
         .shadow-neon {
             box-shadow: 0 0 15px rgba(139, 92, 246, 0.7); /* violet-500 */
         }
+
         .pro-active .shadow-neon {
             animation: neonGlow 3s ease-in-out infinite;
         }
+
         .pro-text-gradient {
             background-image: linear-gradient(45deg, #a78bfa, #c4b5fd, #ddd6fe);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        
+                
         /* Utility icons (using SVG for simplicity) */
         .icon {
             display: inline-block;
@@ -73,12 +78,21 @@
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+
+        /* Interactive elements for hover/touch effects */
+        .interactive-element:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .interactive-element:active {
+            transform: translateY(1px);
+            box-shadow: none;
+        }
     </style>
 </head>
 <body class="min-h-screen">
-    
     <div id="app" class="min-h-screen p-4 sm:p-8 transition-all duration-500 bg-white text-gray-800 font-sans particle-bg">
-        <!-- Content will be rendered here -->
+        <!-- Loading Screen -->
         <div id="loading-screen" class="flex items-center justify-center min-h-screen">
             <div class="text-xl font-semibold text-fuchsia-600 animate-pulse text-center">
                 Loading Leaderboard...
@@ -102,10 +116,12 @@
             query, 
             onSnapshot, 
             addDoc,
+            setDoc, // Used to add allowed users by ID
+            doc,   // Used to reference a specific allowed user document
             serverTimestamp,
             setLogLevel
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
+
         // =====================================================================
         // === GLOBAL CONFIG & STATE ===
         // =====================================================================
@@ -121,18 +137,21 @@
 
         // The special "Pro Code"
         const PRO_CODE = "TENA_NET_THE_BEST";
-
-        // CTF Closing Date: NOV 1 AT 12:00AM (Midnight 2025-11-01)
-        const CLOSING_DATE = new Date('2025-11-01T00:00:00').getTime(); 
-
+        
+        // CTF Closing Duration: 1 day (24h) + 1 hour (1h) = 25 hours in milliseconds
+        const DURATION_MS = (25 * 60 * 60 * 1000); 
+        let CLOSING_DATE; // Will be set in window.onload based on DURATION_MS
+        
         let db = null;
         let auth = null;
         let userId = '';
         let userEmail = '';
         let scores = [];
+        let allowedUsers = {}; // Object of {userId: true} for quick lookup
+        let isAllowed = false; // Flag for current user's submission status on the list
+        let isPro = false; // Flag for Pro Access status
         let isLoading = true;
-        let isPro = false;
-        let timeRemaining = CLOSING_DATE - Date.now();
+        let timeRemaining = DURATION_MS; // Initialize with full duration
         let error = '';
 
         // =====================================================================
@@ -148,14 +167,18 @@
                 'User': '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
                 'CheckCircle': '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
                 'XCircle': '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
-                'ShieldOff': '<path d="M19.5 7.5A.5.5 0 0 1 20 8l-8 13-8-13a2 2 0 0 1 1.77-3L12 2l2.25 4.5"/><line x1="2" x2="22" y1="2" y2="22"/>'
+                'ShieldOff': '<path d="M10 5L6 9l-3 3 9 9 9-9-3-3m-6-6 6 6"/>', // Simplified ShieldOff
+                'Lock': '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+                'Key': '<path d="M21 2l-2 2-7 7L4 18l3 3 7-7 7-7z"/>',
+                'List': '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>'
+
             };
             const path = icons[name] || '';
             return `<svg class="icon ${className}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
         };
 
         const formatScore = (score) => score.toLocaleString();
-
+        
         const formatTime = (ms) => {
             if (ms < 0) return "CLOSED";
             const totalSeconds = Math.floor(ms / 1000);
@@ -194,6 +217,52 @@
             appDiv.className = `min-h-screen p-4 sm:p-8 transition-all duration-500 ${classes.baseBg} ${classes.baseText} font-sans particle-bg ${isPro ? 'pro-active' : ''}`;
         };
 
+        // Renders the Authorization Status
+        const updateAllowedStatus = () => {
+            isAllowed = !!allowedUsers[userId];
+            // --- NEW LOGIC: Can submit if on list OR if Pro Access is active ---
+            const canSubmit = isAllowed || isPro; 
+
+            const statusElement = document.getElementById('allowed-status');
+            const submitButton = document.getElementById('submit-score-btn');
+            const classes = getBaseClasses();
+
+            if (statusElement) {
+                let reason = '';
+                let statusClass = '';
+
+                if (canSubmit) {
+                    // Determine the primary reason for being able to submit
+                    if (isPro && isAllowed) {
+                        reason = ' (Allowed ID & Pro Access)';
+                        statusClass = 'text-green-500';
+                    } else if (isPro) {
+                        reason = ' (Pro Access Override)';
+                        statusClass = 'text-blue-400';
+                    } else if (isAllowed) {
+                        reason = ' (Allowed ID List)';
+                        statusClass = 'text-green-500';
+                    }
+
+                    statusElement.innerHTML = `${getIconSVG('CheckCircle', 'w-4 h-4 mr-1')} <span class="${statusClass} font-bold">Authorized to Submit</span>${reason}`;
+                    statusElement.className = 'text-sm font-semibold flex items-center justify-center mt-2';
+                    
+                    if (submitButton) {
+                         submitButton.disabled = timeRemaining < 0; // Only disable if closed
+                         submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+
+                } else {
+                    statusElement.innerHTML = `${getIconSVG('ShieldOff', 'w-4 h-4 mr-1 text-red-500')} Unauthorized: Requires Allowed ID or Pro Access`;
+                    statusElement.className = 'text-sm font-semibold text-red-500 flex items-center justify-center mt-2';
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            }
+        }
+
         const updateCountdown = () => {
             const timeElement = document.getElementById('time-remaining');
             const countdownContainer = document.getElementById('countdown-container');
@@ -201,8 +270,7 @@
                 const isClosed = timeRemaining < 0;
                 timeElement.textContent = isClosed ? 'CLOSED' : formatTime(timeRemaining);
 
-                const baseClasses = getBaseClasses();
-                
+                const baseClasses = getBaseClasses();                                
                 let containerClasses = `p-4 mb-8 text-center rounded-xl shadow-lg transition-colors duration-500`;
                 if (isClosed) {
                     containerClasses += ' bg-red-800 text-white border-2 border-red-500';
@@ -215,21 +283,14 @@
                 }
                 countdownContainer.className = containerClasses;
 
-                // Disable submission if closed
-                const submitButton = document.getElementById('submit-score-btn');
-                const scoreInput = document.getElementById('new-score-input');
-                const usernameInput = document.getElementById('username-input');
-                if (submitButton) {
-                    const submissionSection = document.getElementById('submission-section');
-                    submitButton.disabled = isClosed;
-                    submitButton.textContent = isClosed ? 'CTF CLOSED' : 'POST SCORE';
+                // Disable submission if closed, but only if the user is otherwise allowed
+                const submissionSection = document.getElementById('submission-section');
+                if (submissionSection) {
                     if (isClosed) {
                         submissionSection.classList.add('opacity-50', 'pointer-events-none');
                     } else {
                         submissionSection.classList.remove('opacity-50', 'pointer-events-none');
                     }
-                    if (scoreInput) scoreInput.disabled = isClosed;
-                    if (usernameInput) usernameInput.disabled = isClosed;
                 }
             }
         };
@@ -253,7 +314,7 @@
                 const rowClasses = isCurrentUser 
                     ? `font-extrabold ${isPro ? 'bg-violet-800/30' : 'bg-fuchsia-100'} hover:opacity-90`
                     : `hover:opacity-80 ${isPro ? '' : 'text-gray-700'}`;
-                
+                                
                 let rankStyle = '';
                 if (index === 0) rankStyle = `${isPro ? 'text-yellow-400' : 'text-yellow-500'} text-xl`;
                 else if (index === 1) rankStyle = `${isPro ? 'text-slate-400' : 'text-slate-400'} text-lg`;
@@ -267,7 +328,8 @@
                     <td class="px-6 py-3 whitespace-nowrap font-semibold flex items-center">
                         ${getIconSVG('User', 'w-4 h-4 mr-2 text-gray-400 hidden sm:inline')}
                         ${entry.username}
-                        ${isCurrentUser ? `<span class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${isPro ? 'bg-violet-500 text-black' : 'bg-fuchsia-600 text-white'}">YOU</span>` : ''}
+                        ${entry.username !== entry.userId ? `<span class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${isPro ? 'bg-violet-500 text-black' : 'bg-fuchsia-600 text-white'}">PRO</span>` : ''}
+                        ${isCurrentUser ? `<span class="ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${isPro ? 'bg-yellow-400 text-black' : 'bg-gray-800 text-white'}">YOU</span>` : ''}
                     </td>
                     <td class="px-6 py-3 whitespace-nowrap text-xs font-mono hidden sm:table-cell ${isPro ? 'text-gray-500' : 'text-gray-400'}">
                         ${entry.userId}
@@ -280,30 +342,99 @@
             });
         };
 
-        const renderError = (msg) => {
-            const errorElement = document.getElementById('error-message');
+        const renderAdminPanel = () => {
+            const allowedIds = Object.keys(allowedUsers);
+            const classes = getBaseClasses();
+
+            return `
+                <section class="p-4 mb-8 rounded-xl transition-all duration-500 ${classes.cardBg} border-2">
+                    <details>
+                        <summary class="text-xl font-bold cursor-pointer ${classes.accent} flex items-center">
+                            ${getIconSVG('Lock', 'w-6 h-6 mr-2')}
+                            Allowed Users Admin Panel
+                            <span class="ml-3 text-sm font-medium ${isAllowed ? 'text-green-500' : 'text-red-500'}">
+                                (Current ID Status: ${isAllowed ? 'Allowed' : 'Not on List'})
+                            </span>
+                        </summary>
+
+                        <div class="mt-4 pt-4 border-t ${isPro ? 'border-gray-700' : 'border-gray-200'}">
+                            <h3 class="text-lg font-semibold mb-2 flex items-center">
+                                ${getIconSVG('List', 'w-4 h-4 mr-2 text-yellow-400')}
+                                Active Allowed IDs (${allowedIds.length})
+                            </h3>
+                            <div class="max-h-40 overflow-y-auto p-2 rounded-lg ${isPro ? 'bg-gray-700' : 'bg-gray-100'} font-mono text-xs">
+                                ${allowedIds.length > 0 
+                                    ? allowedIds.map(id => 
+                                        `<p class="${id === userId ? 'text-yellow-400 font-bold' : (isPro ? 'text-gray-300' : 'text-gray-600')} truncate">${id}${id === userId ? ' (YOU)' : ''}</p>`
+                                    ).join('')
+                                    : `<p class="${isPro ? 'text-gray-500' : 'text-gray-400'}">No users are currently allowed to submit scores.</p>`
+                                }
+                            </div>
+
+                            <h3 class="text-lg font-semibold mt-6 mb-2 flex items-center">
+                                ${getIconSVG('Key', 'w-4 h-4 mr-2 text-blue-400')}
+                                Manually Add User ID
+                            </h3>
+                            <form id="allow-user-form" class="flex gap-2">
+                                <input
+                                    type="text"
+                                    id="user-to-allow-input"
+                                    placeholder="Paste User ID here (e.g., kY1W...)"
+                                    class="flex-grow p-3 rounded-lg border-2 focus:outline-none focus:ring-2 ${classes.inputStyle}"
+                                    required
+                                />
+                                <button
+                                    type="submit"
+                                    class="px-6 py-3 font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300 interactive-element"
+                                >
+                                    ALLOW
+                                </button>
+                            </form>
+                            <p id="allow-user-message" class="mt-2 text-sm font-semibold"></p>
+                        </div>
+                    </details>
+                </section>
+            `;
+        };
+
+        const renderError = (msg, targetId = 'error-message') => {
+            const errorElement = document.getElementById(targetId);
             if (errorElement) {
                 errorElement.textContent = msg;
+                errorElement.className = 'mt-4 text-red-500 text-sm font-semibold';
             }
-            error = msg;
+            if (targetId === 'error-message') error = msg;
         };
-        
+                
         const renderMainApp = () => {
             const classes = getBaseClasses();
             updateAppClasses(classes);
+
+            // --- PRO USERNAME LOGIC ---
+            const isUsernameEditable = isPro;
+            const usernamePlaceholder = isUsernameEditable 
+                ? "Enter your custom Pro username (Max 60 chars)" 
+                : "Your User ID (Locked)";
+            // Use the userId as value only if it's NOT editable
+            const usernameValue = isUsernameEditable ? "" : userId; 
+            const usernameClasses = isUsernameEditable 
+                ? classes.inputStyle 
+                : `${classes.inputStyle} font-mono cursor-not-allowed bg-gray-200/50`;
+            const usernameDisabled = isUsernameEditable ? '' : 'disabled';
+            // --------------------------
 
             const appDiv = document.getElementById('app');
             appDiv.innerHTML = `
                 <main class="max-w-4xl mx-auto z-10 relative">
                     <h1 class="text-4xl sm:text-5xl font-extrabold text-center mb-4 transition-colors duration-500 ${isPro ? 'pro-text-gradient' : classes.accent}" id="main-title">
-                        ${isPro ? '/// PRO-LEVEL CTF LEADERBOARD ONLINE ///' : 'Standard Scoreboard'}
+                        ${isPro ? 'TENANET CTF LEADERBOARD' : 'Standard Scoreboard'}
                     </h1>
-                    
+                                        
                     <!-- Countdown Timer -->
                     <div id="countdown-container">
                         <p class="text-xs font-semibold uppercase mb-1 flex items-center justify-center">
                             ${getIconSVG('Clock', 'w-4 h-4 mr-2')}
-                            CTF Challenge Closes: NOV 1, 12:00 AM
+                            CTF Challenge Closes: <span class="font-bold">25 HOURS FROM START</span>
                         </p>
                         <p class="text-4xl font-extrabold font-mono" id="time-remaining"></p>
                     </div>
@@ -312,6 +443,8 @@
                       Auth Email: <code class="font-mono font-bold text-sm">${userEmail || 'N/A (Anonymous)'}</code> | 
                       User ID: <code class="font-mono font-bold text-sm">${userId}</code>
                     </p>
+
+                    ${renderAdminPanel()}
 
                     <!-- PRO CODE Section -->
                     <section class="p-4 mb-8 rounded-xl transition-all duration-500 ${classes.cardBg} border-2">
@@ -343,26 +476,32 @@
                         ` : ''}
                     </section>
 
-
                     <!-- SCORE SUBMISSION Section -->
                     <section class="p-4 mb-8 rounded-xl transition-all duration-500 ${classes.cardBg} border-2" id="submission-section">
-                        <h2 class="text-xl font-bold mb-4 ${classes.accent}">Submit Your Score</h2>
+                        <h2 class="text-xl font-bold mb-4 ${classes.accent}">Submit Score (Allowed IDs or Pro Users Only)</h2>
+                        <p class="text-sm ${isPro ? 'text-gray-400' : 'text-gray-600'} mb-3">
+                            <span class="font-bold">Score Range:</span> Must be between 1,000 and 7,000.
+                        </p>
                         <form id="score-submission-form" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <!-- Username Input: Locked to UserID unless Pro Access is active -->
                             <input
                                 type="text"
                                 id="username-input"
-                                placeholder="Your Username"
-                                value="Player_${Math.floor(Math.random() * 1000)}"
-                                class="col-span-1 p-3 rounded-lg border-2 focus:outline-none focus:ring-2 ${classes.inputStyle}"
-                                maxLength="20"
+                                placeholder="${usernamePlaceholder}"
+                                value="${usernameValue}"
+                                class="col-span-1 p-3 rounded-lg border-2 focus:outline-none focus:ring-2 ${usernameClasses}"
+                                maxLength="60"
                                 required
+                                ${usernameDisabled}
                             />
+                            <!-- Score Input with new min/max -->
                             <input
                                 type="number"
                                 id="new-score-input"
-                                placeholder="Enter Score (e.g., 5000)"
+                                placeholder="Score (Min 1000, Max 7000)"
                                 class="col-span-1 p-3 rounded-lg border-2 focus:outline-none focus:ring-2 ${classes.inputStyle}"
-                                min="1"
+                                min="1000"
+                                max="7000"
                                 required
                             />
                             <button
@@ -374,8 +513,12 @@
                             </button>
                         </form>
                         <p id="error-message" class="mt-4 text-red-500 text-sm font-semibold">${error}</p>
+                        <div id="allowed-status-container" class="mt-2">
+                            <p id="allowed-status" class="text-sm font-semibold flex items-center justify-center">
+                                Checking Authorization...
+                            </p>
+                        </div>
                     </section>
-
 
                     <!-- LEADERBOARD TABLE Section -->
                     <section class="p-4 rounded-xl transition-all duration-500 ${classes.cardBg} border-2">
@@ -383,7 +526,7 @@
                             ${getIconSVG('Trophy', 'w-7 h-7 mr-2')}
                             Top 10 Global Scores
                         </h2>
-                        
+                                                
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y ${isPro ? 'divide-gray-700' : 'divide-gray-200'}">
                                 <thead class="${isPro ? 'bg-gray-700/80' : 'bg-fuchsia-100'}">
@@ -402,23 +545,212 @@
                     </section>
                 </main>
             `;
-            
+                        
             // Re-attach event listeners after DOM update
             setupEventListeners();
             // Initial render of dynamic data
             updateCountdown();
             renderLeaderboard();
+            updateAllowedStatus();
         };
 
-        
         // =====================================================================
-        // === CORE LOGIC (Firebase & Data) ===
+        // === FIRESTORE LISTENERS & API ===
+        // =====================================================================
+
+        const setupLeaderboardListener = () => {
+            if (!db) {
+                scores = [];
+                renderLeaderboard();
+                return;
+            }
+
+            // Public collection path: /artifacts/{appId}/public/data/leaderboard
+            const leaderboardCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
+            const q = query(leaderboardCollectionRef);
+
+            console.log("Setting up live listener for leaderboard...");
+
+            // Set up the real-time listener
+            onSnapshot(q, (snapshot) => {
+                const liveScores = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                // Client-side sort: Highest score first, then by earliest submission time (timestamp)
+                liveScores.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return b.score - a.score; // Descending score
+                    }
+                    // Fallback for timestamp: use toMillis() if available, otherwise 0
+                    const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+                    const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+                    return timeA - timeB; 
+                });
+
+                scores = liveScores;
+                renderLeaderboard();
+            }, (err) => {
+                console.error("Firestore snapshot error (Leaderboard):", err);
+                renderError("Could not load leaderboard data.");
+            });
+        };
+
+        const setupAllowedUsersListener = () => {
+            if (!db) return;
+
+            // Public collection path: /artifacts/{appId}/public/data/allowed_users
+            const allowedCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'allowed_users');
+            const q = query(allowedCollectionRef);
+
+            console.log("Setting up live listener for allowed users...");
+
+            onSnapshot(q, (snapshot) => {
+                const liveAllowed = {};
+                snapshot.docs.forEach(doc => {
+                    // Document ID is the User ID
+                    liveAllowed[doc.id] = true;
+                });
+                allowedUsers = liveAllowed;
+                console.log("Allowed Users updated:", Object.keys(allowedUsers));
+                
+                // Re-render relevant UI parts
+                updateAllowedStatus();
+                renderMainApp(); // To update the Admin Panel content and Username field
+            }, (err) => {
+                console.error("Firestore allowed users snapshot error:", err);
+                renderError("Could not load authorization list.");
+            });
+        };
+
+        const allowUser = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('user-to-allow-input');
+            const messageElement = document.getElementById('allow-user-message');
+            
+            messageElement.textContent = ''; // Clear previous message
+            
+            const targetUserId = input.value.trim();
+
+            if (!db || !targetUserId || targetUserId.length < 10) {
+                messageElement.textContent = "Please enter a valid-looking User ID (at least 10 chars).";
+                messageElement.className = 'mt-2 text-red-500 text-sm font-semibold';
+                return;
+            }
+
+            try {
+                // Use setDoc to create a document with the User ID as the document ID
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'allowed_users', targetUserId);
+                
+                await setDoc(docRef, { 
+                    allowedBy: userId, // Record who added the user
+                    timestamp: serverTimestamp() 
+                }, { merge: true });
+
+                messageElement.textContent = `User ID ${targetUserId.substring(0, 5)}... has been allowed!`;
+                messageElement.className = 'mt-2 text-green-500 text-sm font-semibold';
+                input.value = ''; // Clear input on success
+            } catch (e) {
+                console.error("Error allowing user: ", e);
+                messageElement.textContent = "Failed to allow user. Check console for details.";
+                messageElement.className = 'mt-2 text-red-500 text-sm font-semibold';
+            }
+        };
+
+
+        const addScore = async (e) => {
+            e.preventDefault();                        
+
+            const newScoreInput = document.getElementById('new-score-input');
+            const usernameInput = document.getElementById('username-input');
+
+            if (timeRemaining < 0) {
+                renderError("The CTF challenge is closed. Cannot submit new scores.");
+                return;
+            }
+
+            // --- CRITICAL AUTHORIZATION LOGIC ---
+            const canSubmit = isAllowed || isPro;
+            if (!canSubmit) {
+                renderError("Submission Failed: You must either be on the official Allowed IDs list or have Pro Access enabled to submit scores.");
+                return;
+            }
+            // ----------------------------------------
+            
+            if (!db || !userId) {
+                renderError("Database connection not ready. Try refreshing.");
+                return;
+            }
+
+            const scoreValue = parseInt(newScoreInput.value, 10);
+            const MIN_SCORE = 1000;
+            const MAX_SCORE = 7000;
+
+            if (isNaN(scoreValue) || scoreValue < MIN_SCORE || scoreValue > MAX_SCORE) {
+                renderError(`Please enter a valid score between ${MIN_SCORE.toLocaleString()} and ${MAX_SCORE.toLocaleString()}.`);
+                return;
+            }
+
+            // --- PRO USERNAME LOGIC ---
+            let usernameToSubmit;
+            if (isPro) {
+                // Pro users use the value they entered in the unlocked field
+                const rawUsername = usernameInput.value.trim();
+                if (rawUsername === '') {
+                    renderError("Pro users must enter a custom username.");
+                    return;
+                }
+                // Sanitize username (take max 60 characters)
+                usernameToSubmit = rawUsername.substring(0, 60); 
+            } else {
+                // Standard users are forced to use their unique Firebase ID
+                usernameToSubmit = userId; 
+            }
+            // --------------------------
+
+            renderError(''); // Clear previous error
+                        
+            try {
+                // Exponential backoff mechanism for API calls
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), {
+                            userId: userId,
+                            username: usernameToSubmit, 
+                            score: scoreValue,
+                            timestamp: serverTimestamp(),
+                        });
+                        newScoreInput.value = '';
+                        if(isPro) usernameInput.value = usernameToSubmit; // Keep Pro username for quick re-submission
+                        console.log("Score added successfully.");
+                        // Success, break out of loop
+                        renderError('Score submitted successfully!', 'error-message');
+                        setTimeout(() => renderError('', 'error-message'), 3000);
+                        return; 
+                    } catch (e) {
+                        if (i < 2) { // If not the last retry
+                            const delay = Math.pow(2, i) * 1000;
+                            console.warn(`Attempt ${i + 1} failed. Retrying in ${delay / 1000}s...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        } else {
+                            throw e; // Re-throw error on final failure
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Error adding document after retries: ", e);
+                renderError("Failed to submit score. Check console for details.");
+            }
+        };
+
+        // =====================================================================
+        // === AUTH & INITIALIZATION ===
         // =====================================================================
 
         const initFirebaseAndAuth = async () => {
             // Enable debugging logs
             setLogLevel('debug'); 
-
             if (!firebaseConfig) {
                 console.error("Firebase config is missing.");
                 isLoading = false;
@@ -463,6 +795,7 @@
                     // Always render the main app now that we have auth or a fallback ID
                     renderMainApp();
                     setupLeaderboardListener();
+                    setupAllowedUsersListener(); 
                 });
 
                 authenticate();
@@ -474,105 +807,7 @@
                 renderMainApp(); // Render main app to display the critical error
             }
         };
-
-        const setupLeaderboardListener = () => {
-            if (!db) {
-                scores = [];
-                renderLeaderboard();
-                return;
-            }
-
-            // Public collection path: /artifacts/{appId}/public/data/leaderboard
-            const leaderboardCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-            const q = query(leaderboardCollectionRef);
-
-            console.log("Setting up live listener for leaderboard...");
-
-            // Set up the real-time listener
-            onSnapshot(q, (snapshot) => {
-                const liveScores = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                // Client-side sort: Highest score first, then by earliest submission time (timestamp)
-                liveScores.sort((a, b) => {
-                    if (b.score !== a.score) {
-                        return b.score - a.score; // Descending score
-                    }
-                    // Fallback for timestamp: use toMillis() if available, otherwise 0
-                    const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
-                    const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
-                    return timeA - timeB; 
-                });
-
-                scores = liveScores;
-                renderLeaderboard();
-            }, (err) => {
-                console.error("Firestore snapshot error:", err);
-                renderError("Could not load leaderboard data.");
-            });
-        };
-
-        const addScore = async (e) => {
-            e.preventDefault();
-            
-            const usernameInput = document.getElementById('username-input');
-            const newScoreInput = document.getElementById('new-score-input');
-            
-            if (timeRemaining < 0) {
-                renderError("The CTF challenge is closed. Cannot submit new scores.");
-                return;
-            }
-
-            if (!db || !userId) {
-                renderError("Database connection not ready. Try refreshing.");
-                return;
-            }
-
-            const scoreValue = parseInt(newScoreInput.value, 10);
-            const username = usernameInput.value.trim();
-
-            if (isNaN(scoreValue) || scoreValue <= 0) {
-                renderError("Please enter a valid positive score.");
-                return;
-            }
-            if (username.length < 3) {
-                renderError("Username must be at least 3 characters.");
-                return;
-            }
-
-            renderError(''); // Clear previous error
-            
-            try {
-                // Exponential backoff mechanism for API calls
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'), {
-                            userId: userId,
-                            username: username,
-                            score: scoreValue,
-                            timestamp: serverTimestamp(),
-                        });
-                        newScoreInput.value = '';
-                        console.log("Score added successfully.");
-                        return; // Success, break out of loop
-                    } catch (e) {
-                        if (i < 2) { // If not the last retry
-                            const delay = Math.pow(2, i) * 1000;
-                            console.warn(`Attempt ${i + 1} failed. Retrying in ${delay / 1000}s...`);
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                        } else {
-                            throw e; // Re-throw error on final failure
-                        }
-                    }
-                }
-            } catch (e) {
-                console.error("Error adding document after retries: ", e);
-                renderError("Failed to submit score. Check console for details.");
-            }
-        };
-
+        
         const handleProCodeCheck = (e) => {
             e.preventDefault();
             const proCodeInput = document.getElementById('pro-code-input');
@@ -583,7 +818,8 @@
                 isPro = false;
                 renderError('Invalid Pro Code. Try again!');
             }
-            renderMainApp();
+            // Re-render everything to update the theme, submission status, and username field
+            renderMainApp(); 
         };
 
         const setupEventListeners = () => {
@@ -595,13 +831,20 @@
             if (proCodeForm) {
                 proCodeForm.onsubmit = handleProCodeCheck;
             }
+            const allowUserForm = document.getElementById('allow-user-form');
+            if (allowUserForm) {
+                allowUserForm.onsubmit = allowUser;
+            }
         };
-        
+
         // =====================================================================
         // === INITIALIZATION ===
         // =====================================================================
 
         window.onload = () => {
+            // Calculate the closing date as 25 hours (1 day + 1 hour) from when the script loads
+            CLOSING_DATE = Date.now() + DURATION_MS;
+
             // Start the countdown timer immediately
             setInterval(() => {
                 timeRemaining = CLOSING_DATE - Date.now();
@@ -611,7 +854,6 @@
             // Initialize Firebase and start the application flow
             initFirebaseAndAuth();
         };
-
     </script>
 </body>
 </html>
