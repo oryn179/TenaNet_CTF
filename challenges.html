@@ -183,8 +183,7 @@ let mockUserPoints = 0;
 let activeFilter = 'All';
 let loggedInEmail = localStorage.getItem("currentUser") || "anonymous@tenanet.ctf";
 
-// --- CHALLENGES WITH GOOGLE DRIVE LINKS ---
-// The 'flag' property remains for submission logic, but is not displayed to the user.
+/// --- CHALLENGES WITH UNIQUE IDs ---
 const challenges = [
     { 
         id: 1, 
@@ -195,8 +194,8 @@ const challenges = [
         status: "unsolved", 
         flag: "TNCTF{PCAP_EASY_FOLLOW}" 
     },
-{ 
-        id: 1, 
+    { 
+        id: 2, 
         name: "የጠፋው የቅዳሜ ሙድ (Losted Saturday mood)", 
         category: "Forensics", 
         points: 2000, 
@@ -205,7 +204,7 @@ const challenges = [
         flag: "TNCTF{LOST_SATURDAY_MOOD}" 
     },
     { 
-        id: 10, 
+        id: 3, 
         name: "የመጀመሪያው ቁልፍ (The First Key)", 
         category: "Crypto", 
         points: 1500, 
@@ -214,7 +213,7 @@ const challenges = [
         flag: "TNCTF{mono_sub_rocks}" 
     },
     { 
-        id: 11, 
+        id: 4, 
         name: "ተደብቄ አንዳልቀር (I Won't Stay Hidden)", 
         category: "Crypto", 
         points: 2000, 
@@ -223,7 +222,7 @@ const challenges = [
         flag: "TNCTF{Think_B3for3_U_Click}" 
     },
     { 
-        id: 12, 
+        id: 5, 
         name: "ሌባው የት ሄደ (Where Did the Thief Go?)", 
         category: "Reversing", 
         points: 2500, 
