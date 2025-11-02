@@ -3,264 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CTF Leaderboard</title>
-    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Use Inter font --><style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    <title>TENANET Leaderboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Cursor Style (as requested) */
         body {
+            cursor: url('data:image/x-icon;base64,AAACAAEAICACAA8AAAAwAQAAFgAAACgAAAAgAAAAQAAAAAEAAQAAAAAAgAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAA+vr6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+AAAD/gAAA/4AAAf+AAAH/wAAD/8AAA//AAAf/4AAH/+AADv/gAB7/4AAe/2AAHP9gAADbQAAA2wAAABgAAAAYAAAAGAAAABgAAAAYAAAAGAAAABgAAAAAAA////////////////////////////////////////////8Af//+AD///gA///4AP//8AD///AAf//gAH//4AB//8AAP//AAD//gAA//wAAP/8AAD//AAA//4gAf//4AP///AP///8P////D////w////8P////D////w////+f/8='), auto;
             font-family: 'Inter', sans-serif;
-            /* Changed background to a very dark purple/indigo color */
-            background-color: #1a1538; 
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-            overflow: hidden; /* Hide scrollbars if particles go out of bounds */
-            position: relative; /* Needed for particle canvas positioning */
+            overflow: hidden; /* Prevent scrollbars due to particle canvas */
         }
-        #particles-js {
-            position: absolute;
-            width: 100%;
-            height: 100%;
+
+        /* Particle Canvas Styling */
+        #particle-canvas {
+            position: fixed;
             top: 0;
             left: 0;
-            /* Changed gradient to deep, dark purple shades */
-            background-image: linear-gradient(135deg, #1e1b4b 0%, #4c1d95 100%); 
-            z-index: 0; /* Behind other content */
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; /* Place behind the content */
+            opacity: 0.5; /* Slightly muted effect */
         }
-        #leaderboard-container {
-            position: relative; /* Ensure leaderboard is above particles */
-            z-index: 1;
-        }
-        #comeback-message {
-            position: relative; /* Ensure message is above particles */
-            z-index: 1;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Increased text shadow for better contrast against dark background */
+
+        /* Custom glow for the Leaderboard card */
+        .leaderboard-card {
+            box-shadow: 0 0 50px rgba(109, 40, 217, 0.4); /* Purple glow effect */
+            background: rgba(30, 2, 70, 0.9); /* Darker purple transparent background */
+            backdrop-filter: blur(8px); /* Frosted glass effect */
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen p-4">
 
-    <!-- Particles.js container --><div id="particles-js"></div>
+    <!-- Particle Background Canvas -->
+    <canvas id="particle-canvas"></canvas>
 
-    <!-- Main Leaderboard Card --><div id="leaderboard-container" class="w-full max-w-xl bg-white p-4 sm:p-8 rounded-3xl shadow-2xl border-4 border-purple-600 transform hover:scale-[1.01] transition duration-300 ease-in-out">
-        
-        <!-- Header Section --><div class="text-center mb-6 sm:mb-8">
-            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 tracking-tight">
-                <span class="text-purple-700">CTF</span> Leaderboard ✨
-            </h1>
-            <p class="mt-2 text-xl text-indigo-700 font-semibold">
-                Contest Finished! Great Job, Hackers!
-            </p>
+    <!-- Leaderboard Container -->
+    <div class="leaderboard-card w-full max-w-lg mx-auto rounded-3xl p-6 md:p-10 border border-indigo-700/50 relative z-10">
+
+        <!-- Header -->
+        <h1 class="text-4xl md:text-5xl font-extrabold text-center mb-6 tracking-tight" style="color: #a78bfa;">
+            TENANET CTF LEADERBOARD
+        </h1>
+        <p class="text-center text-indigo-300 mb-8 text-lg">
+            Top Players of the CTF
+        </p>
+
+        <!-- Dynamic List of Scores -->
+        <div id="scores-list" class="space-y-4">
+            <!-- Rank 1: Gold -->
+            <div class="flex items-center p-4 rounded-xl bg-yellow-900/50 border border-yellow-500/50 transform transition duration-300 hover:scale-[1.02]">
+                <span class="text-xl font-bold w-10 text-center text-yellow-300">#1</span>
+                <div class="flex-grow ml-4">
+                    <div class="font-semibold text-yellow-100">Mikey <span class="text-sm opacity-70">(Demo Users)</span></div>
+                    <div class="text-xs text-yellow-400">The Undefeated Champion</div>
+                </div>
+                <span class="text-2xl font-extrabold text-yellow-300">7,000</span>
+            </div>
+
+            <!-- Rank 2: Silver/Bronze (Tie) -->
+            <div class="flex items-center p-4 rounded-xl bg-gray-800/50 border border-gray-500/50 transform transition duration-300 hover:scale-[1.02]">
+                <span class="text-xl font-bold w-10 text-center text-gray-300">#2</span>
+                <div class="flex-grow ml-4">
+                    <div class="font-semibold text-gray-100">Noname <span class="text-sm opacity-70">(Demo Users)</span></div>
+                    <div class="text-xs text-gray-400">The Silent Runner-Up</div>
+                </div>
+                <span class="text-2xl font-extrabold text-gray-300">7,000</span>
+            </div>
+
+            <!-- Rank 3: Regular Score -->
+            <div class="flex items-center p-4 rounded-xl bg-indigo-900/40 border border-indigo-600/40 transform transition duration-300 hover:scale-[1.01]">
+                <span class="text-lg font-medium w-10 text-center text-indigo-300">#3</span>
+                <div class="flex-grow ml-4">
+                    <div class="font-medium text-gray-100">Offline</div>
+                    <div class="text-xs text-indigo-400">Last Seen: 2 Days Ago</div>
+                </div>
+                <span class="text-xl font-semibold text-indigo-300">700</span>
+            </div>
+            
+            <!-- Additional filler entries to make it look like a full leaderboard -->
+            <div class="flex items-center p-3 rounded-xl bg-gray-800/30 border border-transparent hover:bg-gray-700/40">
+                <span class="w-10 text-center text-gray-400">#46</span>
+                <div class="flex-grow ml-4 font-light text-gray-300">ShadowHunter</div>
+                <span class="text-lg font-light text-gray-300">650</span>
+            </div>
+            <div class="flex items-center p-3 rounded-xl bg-gray-800/30 border border-transparent hover:bg-gray-700/40">
+                <span class="w-10 text-center text-gray-400">#47</span>
+                <div class="flex-grow ml-4 font-light text-gray-300">GamerTagPro</div>
+                <span class="text-lg font-light text-gray-300">590</span>
+            </div>
+            <div class="flex items-center p-3 rounded-xl bg-gray-800/30 border border-transparent hover:bg-gray-700/40">
+                <span class="w-10 text-center text-gray-400">#48</span>
+                <div class="flex-grow ml-4 font-light text-gray-300">TheQuietOne</div>
+                <span class="text-lg font-light text-gray-300">550</span>
+            </div>
+            
         </div>
 
-        <!-- Leaderboard List Header --><div class="flex justify-between items-center px-4 py-3 text-sm font-bold text-gray-600 border-b-2 border-gray-200">
-            <div class="w-1/4 text-left">RANK</div>
-            <div class="w-1/2 text-left">TEAM / USER</div>
-            <div class="w-1/4 text-right">POINTS</div>
+        <!-- Footer Call to Action -->
+        <div class="mt-8 text-center">
+            <button class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition duration-200 transform hover:scale-[1.01] shadow-lg shadow-indigo-500/50">
+                VIEW FULL RANKINGS
+            </button>
         </div>
 
-        <!-- Leaderboard Items Container --><div id="leaderboard-list" class="space-y-3 mt-4">
-            <!-- Leaderboard items will be injected here by JavaScript --></div>
-
-        <!-- Footer Note --><div class="mt-8 text-center text-sm text-gray-500 pt-4 border-t border-gray-100">
-            <p>Data provided by the CTF Score Engine.</p>
-        </div>
     </div>
 
-    <!-- "We Are Back soon with Bang" Message --><div id="comeback-message" class="absolute bottom-8 sm:bottom-12 text-center text-white text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wide px-4">
-        We Are Back soon with Bang! 💥 Thanks !
-    </div>
-
-    <!-- Particles.js library --><script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
-        // --- Leaderboard Data ---
-        const rawLeaderboardData = [
-            // User-provided data
-            { name: "Mikey", organization: "(Demo Users)", points: 7000 },
-            { name: "Offline", organization: "", points: 7000 },
-            { name: "Noname", organization: "(Demo Users)", points: 7000 },
-            
-            // Additional data for visual completeness
-            { name: "RootKitten", organization: "(Solo)", points: 6850 },
-            { name: "PandaSec", organization: "(School Team)", points: 6200 },
-            { name: "BinaryBunny", organization: "", points: 5800 },
-            { name: "TheFlagHunters", organization: "(Pro Squad)", points: 5500 },
-            { name: "CyberGnome", organization: "", points: 5000 },
-            { name: "CodeNinja", organization: "", points: 4900 },
-            { name: "AnonMouse", organization: "(Newcomer)", points: 4500 },
-        ];
+        // --- Particle Effect Script for Enhanced UI/UX ---
 
-        // Function to assign ranks and generate the HTML list item
-        function renderLeaderboard() {
-            const listContainer = document.getElementById('leaderboard-list');
-            listContainer.innerHTML = ''; // Clear existing content
-            
-            let currentRank = 1;
-            rawLeaderboardData.forEach((item, index) => {
-                if (index > 0 && item.points < rawLeaderboardData[index - 1].points) {
-                    currentRank = index + 1;
-                }
-                
-                let rankClass = 'text-gray-700 bg-gray-100';
-                let medalIcon = currentRank;
-                let nameClass = 'font-semibold text-gray-800';
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
 
-                // We keep the medal colors standard (Gold/Silver/Bronze)
-                if (currentRank === 1) {
-                    rankClass = 'bg-yellow-400 text-gray-800 border-4 border-yellow-600';
-                    medalIcon = '🥇';
-                    nameClass = 'font-extrabold text-yellow-700';
-                } else if (currentRank === 2) {
-                    rankClass = 'bg-gray-300 text-gray-800 border-4 border-gray-400';
-                    medalIcon = '🥈';
-                    nameClass = 'font-extrabold text-gray-700';
-                } else if (currentRank === 3) {
-                    rankClass = 'bg-yellow-600/20 text-yellow-800 border-4 border-yellow-500/50';
-                    medalIcon = '🥉';
-                    nameClass = 'font-bold text-yellow-800';
+        // Set up the canvas size to match the window
+        function setCanvasSize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        setCanvasSize();
+        window.addEventListener('resize', setCanvasSize);
+
+        // Particle Class
+        class Particle {
+            constructor(x, y, radius, color, velocity) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.velocity = velocity;
+                this.alpha = 1;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.draw();
+                this.x += this.velocity.x;
+                this.y += this.velocity.y;
+                // Fade out particle slowly
+                this.alpha -= 0.005;
+            }
+        }
+
+        // Initialization function
+        function init() {
+            particles = [];
+            // Spawn initial particles across the screen
+            for (let i = 0; i < 150; i++) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                const radius = Math.random() * 2 + 0.5;
+                const color = Math.random() < 0.5 ? '#7c3aed' : '#a78bfa'; // Purple shades
+                const velocity = {
+                    x: (Math.random() - 0.5) * 0.2,
+                    y: (Math.random() - 0.5) * 0.2
+                };
+                particles.push(new Particle(x, y, radius, color, velocity));
+            }
+        }
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            // Clear the canvas with a slight opacity for a trailing effect
+            ctx.fillStyle = 'rgba(17, 24, 39, 0.2)'; // Faint trail
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach((particle, index) => {
+                if (particle.alpha > 0 && particle.radius > 0) {
+                    particle.update();
+                } else {
+                    // Respawn the particle at a random edge once it fades out
+                    const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+                    let x, y, vx, vy;
+                    const radius = Math.random() * 2 + 0.5;
+                    const speed = 0.2;
+
+                    switch (side) {
+                        case 0: // Top
+                            x = Math.random() * canvas.width;
+                            y = 0;
+                            vx = (Math.random() - 0.5) * speed;
+                            vy = Math.random() * speed;
+                            break;
+                        case 1: // Right
+                            x = canvas.width;
+                            y = Math.random() * canvas.height;
+                            vx = -Math.random() * speed;
+                            vy = (Math.random() - 0.5) * speed;
+                            break;
+                        case 2: // Bottom
+                            x = Math.random() * canvas.width;
+                            y = canvas.height;
+                            vx = (Math.random() - 0.5) * speed;
+                            vy = -Math.random() * speed;
+                            break;
+                        case 3: // Left
+                            x = 0;
+                            y = Math.random() * canvas.height;
+                            vx = Math.random() * speed;
+                            vy = (Math.random() - 0.5) * speed;
+                            break;
+                    }
+                    
+                    particles[index] = new Particle(x, y, radius, particles[index].color, { x: vx, y: vy });
                 }
-                
-                const itemDiv = document.createElement('div');
-                // Updated non-top-3 rows to use a slightly darker purple/hover effect for better overall feel
-                itemDiv.className = `flex justify-between items-center p-3 rounded-xl shadow-md transition duration-200 ${currentRank <= 3 ? 'bg-white/90 transform scale-[1.02] border-2 border-dashed border-purple-300' : 'bg-purple-100/50 hover:bg-purple-200/80'}`;
-                
-                itemDiv.innerHTML = `
-                    <div class="w-1/4 text-center">
-                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full text-lg ${rankClass} shadow-inner">
-                            ${medalIcon}
-                        </span>
-                    </div>
-                    <div class="w-1/2 text-left truncate">
-                        <div class="${nameClass} text-base sm:text-lg leading-tight">
-                            ${item.name}
-                        </div>
-                        <div class="text-xs text-gray-500 font-medium leading-none">
-                            ${item.organization || '—'}
-                        </div>
-                    </div>
-                    <div class="w-1/4 text-right">
-                        <span class="text-xl sm:text-2xl font-bold text-purple-700">
-                            ${item.points.toLocaleString()}
-                        </span>
-                    </div>
-                `;
-                listContainer.appendChild(itemDiv);
             });
         }
 
-        // --- Particles.js Configuration ---
-        particlesJS('particles-js', {
-            "particles": {
-                "number": {
-                    "value": 80,
-                    "density": {
-                        "enable": true,
-                        "value_area": 800
-                    }
-                },
-                "color": {
-                    // Adjusted colors for better visibility on a dark background
-                    "value": ["#ffffff", "#f0e4ff", "#d8b4fe"] 
-                },
-                "shape": {
-                    "type": "circle",
-                    "stroke": {
-                        "width": 0,
-                        "color": "#000000"
-                    },
-                    "polygon": {
-                        "nb_sides": 5
-                    }
-                },
-                "opacity": {
-                    "value": 0.5,
-                    "random": false,
-                    "anim": {
-                        "enable": false,
-                        "speed": 1,
-                        "opacity_min": 0.1,
-                        "sync": false
-                    }
-                },
-                "size": {
-                    "value": 3,
-                    "random": true,
-                    "anim": {
-                        "enable": false,
-                        "speed": 40,
-                        "size_min": 0.1,
-                        "sync": false
-                    }
-                },
-                "line_linked": {
-                    "enable": true,
-                    "distance": 150,
-                    // Line color is now a lighter, vibrant purple for contrast
-                    "color": "#a78bfa", 
-                    "opacity": 0.6,
-                    "width": 1
-                },
-                "move": {
-                    "enable": true,
-                    "speed": 3,
-                    "direction": "none",
-                    "random": false,
-                    "straight": false,
-                    "out_mode": "out",
-                    "bounce": false,
-                    "attract": {
-                        "enable": false,
-                        "rotateX": 600,
-                        "rotateY": 1200
-                    }
-                }
-            },
-            "interactivity": {
-                "detect_on": "canvas",
-                "events": {
-                    "onhover": {
-                        "enable": true,
-                        "mode": "grab" 
-                    },
-                    "onclick": {
-                        "enable": true,
-                        "mode": "push" 
-                    },
-                    "resize": true
-                },
-                "modes": {
-                    "grab": {
-                        "distance": 140,
-                        "line_linked": {
-                            "opacity": 1
-                        }
-                    },
-                    "bubble": {
-                        "distance": 400,
-                        "size": 40,
-                        "duration": 2,
-                        "opacity": 8,
-                        "speed": 3
-                    },
-                    "repulse": {
-                        "distance": 200,
-                        "duration": 0.4
-                    },
-                    "push": {
-                        "particles_nb": 4
-                    },
-                    "remove": {
-                        "particles_nb": 2
-                    }
-                }
-            },
-            "retina_detect": true
-        });
-
-        // Run the rendering function when the window loads
-        window.onload = renderLeaderboard;
+        // Start animation on window load
+        window.onload = function () {
+            init();
+            animate();
+        };
     </script>
 </body>
 </html>
